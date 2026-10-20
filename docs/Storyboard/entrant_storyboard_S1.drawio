@@ -1,0 +1,91 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Entrant Scenario 1" id="ent1">
+    <mxGraphModel dx="1212" dy="845" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="710" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=20;fontStyle=1;align=left;verticalAlign=middle;" value="Entrant Storyboard, Scenario 1: search manually, win the lottery, then cancel" vertex="1">
+          <mxGeometry height="40" width="1100" x="40" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="n0" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;1. Main Page (Home)&lt;/b&gt;&lt;br&gt;Entrant identified by device, no login&lt;br&gt;&lt;i&gt;US 01.09.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="40" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;2. Search&lt;/b&gt;&lt;br&gt;Type a campsite name or area (e.g. Banff)&lt;br&gt;&lt;i&gt;US 01.01.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="370" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;3. Filter Campsites&lt;/b&gt;&lt;br&gt;Location, dates, number of guests&lt;br&gt;&lt;i&gt;US 01.01.02&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="690" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;4. Campsite List&lt;/b&gt;&lt;br&gt;Summaries: name, location, max occupancy, rating&lt;br&gt;&lt;i&gt;US 01.01.03, 01.01.04&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="1000" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;5. Campsite Details&lt;/b&gt;&lt;br&gt;Full details and active lottery&lt;br&gt;&lt;i&gt;US 01.01.05&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="1000" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="n5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;6. Join Waitlist&lt;/b&gt;&lt;br&gt;Join active lottery from details screen&lt;br&gt;&lt;i&gt;US 01.01.06, 01.02.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="690" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="n6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;b&gt;7. Win Notification&lt;/b&gt;&lt;br&gt;Entrant is told they won the lottery&lt;br&gt;&lt;i&gt;US 01.03.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="365" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="n7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;8. Choose Dates&lt;/b&gt;&lt;br&gt;Pick campsite and dates, confirm rules and policies&lt;br&gt;&lt;i&gt;US 01.04.01, 01.04.02, 02.11.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="40" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="n8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;9. Reservation Confirmed&lt;/b&gt;&lt;br&gt;Confirmation shown, download CSV of reservation&lt;br&gt;&lt;i&gt;US 01.05.01, 01.05.02&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="40" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="n9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;10. My Reservations&lt;/b&gt;&lt;br&gt;List of active reservations&lt;br&gt;&lt;i&gt;US 01.06.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="410" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="n10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;11. Cancel Reservation&lt;/b&gt;&lt;br&gt;Confirm cancellation&lt;br&gt;&lt;i&gt;US 01.07.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="730" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="n11" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;b&gt;12. Cancellation Notification&lt;/b&gt;&lt;br&gt;Confirmation by notification or CSV&lt;br&gt;&lt;i&gt;US 01.07.02&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="1000" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" edge="1" parent="1" source="n0" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeWidth=3;" target="n1" value="tap Search">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="n1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=default;strokeWidth=3;" target="n2" value="tap Filter">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="n2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=default;strokeWidth=3;" target="n3" value="apply filters">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="n3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=default;strokeWidth=3;" target="n4" value="tap campsite">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="n4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=0;exitY=0.5;entryX=1;entryY=0.5;strokeColor=default;strokeWidth=3;" target="n5" value="tap Join">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="n5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=0;exitY=0.5;entryX=1;entryY=0.5;strokeColor=default;strokeWidth=3;" target="n6" value="lottery drawn">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="n6" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=0;exitY=0.5;entryX=1;entryY=0.5;strokeColor=default;strokeWidth=3;" target="n7" value="tap Reserve">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="n7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=default;strokeWidth=3;" target="n8" value="confirm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="n8" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=default;strokeWidth=3;" target="n9" value="tap My Reservations">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="n9" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=default;strokeWidth=3;" target="n10" value="tap Cancel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="n10" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=default;strokeWidth=3;" target="n11" value="confirm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lg0" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Screen" vertex="1">
+          <mxGeometry height="30" width="100" x="40" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="lg1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Dialog" vertex="1">
+          <mxGeometry height="30" width="100" x="160" y="610" as="geometry" />
+        </mxCell>
+        <mxCell id="lg2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="System / Notification" vertex="1">
+          <mxGeometry height="30" width="150" x="280" y="610" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

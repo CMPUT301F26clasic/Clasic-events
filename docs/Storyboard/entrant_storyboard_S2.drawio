@@ -1,0 +1,58 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Entrant Scenario 2" id="ent1">
+    <mxGraphModel dx="1500" dy="845" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="710" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-1" parent="1" style="text;html=1;fontSize=20;fontStyle=1;align=left;verticalAlign=middle;" value="Entrant Storyboard, Scenario 2: scan QR code, lose the lottery, delete profile" vertex="1">
+          <mxGeometry height="40" width="1100" x="60" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;1. Scan QR Code&lt;/b&gt;&lt;br&gt;Scan promotional QR code&lt;br&gt;&lt;i&gt;US 01.12.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="90" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;2. Campsite Details&lt;/b&gt;&lt;br&gt;Campsite details opened from QR&lt;br&gt;&lt;i&gt;US 01.01.05&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="420" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;3. Join Waitlist&lt;/b&gt;&lt;br&gt;Join the active lottery&lt;br&gt;&lt;i&gt;US 01.01.06, 01.02.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="710" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="&lt;b&gt;4. Lose Notification&lt;/b&gt;&lt;br&gt;Entrant is told they did not win&lt;br&gt;&lt;i&gt;US 01.03.02&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="1050" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-6" edge="1" parent="1" source="Y2SvDdGVGRuSRs64NEHK-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;defaultLabelBackgroundColor=gap;" target="Y2SvDdGVGRuSRs64NEHK-8" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;5. Profile&lt;/b&gt;&lt;br&gt;Entrant profile screen&lt;br&gt;&lt;i&gt;US 01.07.03&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="1050" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;b&gt;6. Delete Profile&lt;/b&gt;&lt;br&gt;Confirm profile deletion&lt;br&gt;&lt;i&gt;US 01.08.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="700" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-9" edge="1" parent="1" source="Y2SvDdGVGRuSRs64NEHK-2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=default;strokeWidth=3;" target="Y2SvDdGVGRuSRs64NEHK-3" value="QR recognized">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-10" edge="1" parent="1" source="Y2SvDdGVGRuSRs64NEHK-3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=default;strokeWidth=3;" target="Y2SvDdGVGRuSRs64NEHK-4" value="tap Join">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-11" edge="1" parent="1" source="Y2SvDdGVGRuSRs64NEHK-4" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=default;strokeWidth=3;" target="Y2SvDdGVGRuSRs64NEHK-5" value="lottery drawn">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-12" edge="1" parent="1" source="Y2SvDdGVGRuSRs64NEHK-5" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=default;strokeWidth=3;" target="Y2SvDdGVGRuSRs64NEHK-7" value="open Profile">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-13" edge="1" parent="1" source="Y2SvDdGVGRuSRs64NEHK-7" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=0;exitY=0.5;entryX=1;entryY=0.5;strokeColor=default;strokeWidth=3;" target="Y2SvDdGVGRuSRs64NEHK-8" value="tap Delete">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-14" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Screen" vertex="1">
+          <mxGeometry height="30" width="100" x="130" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-15" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Dialog" vertex="1">
+          <mxGeometry height="30" width="100" x="290" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="Y2SvDdGVGRuSRs64NEHK-16" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="System / Notification" vertex="1">
+          <mxGeometry height="30" width="150" x="440" y="330" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

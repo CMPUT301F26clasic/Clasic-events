@@ -1,0 +1,51 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Admin Storyboard" id="adm1">
+    <mxGraphModel dx="1006" dy="701" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="530" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=20;fontStyle=1;align=left;verticalAlign=middle;" value="Admin Storyboard: moderate campsites and owners, review logs, switch role" vertex="1">
+          <mxGeometry height="40" width="1100" x="40" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="n0" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;1. Browse Campsites (main page)&lt;/b&gt;&lt;br&gt;Admin list of all campsites&lt;br&gt;&lt;i&gt;US 03.04.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="210" x="40" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;2. Remove Campsites&lt;/b&gt;&lt;br&gt;Remove old or unnecessary campsites&lt;br&gt;&lt;i&gt;US 03.01.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="390" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;3. Remove Owners&lt;/b&gt;&lt;br&gt;Remove owners who violate app policy&lt;br&gt;&lt;i&gt;US 03.07.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="700" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="n3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;4. Notification Logs&lt;/b&gt;&lt;br&gt;Review logs of all notifications&lt;br&gt;&lt;i&gt;US 03.08.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="700" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="n4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="&lt;b&gt;5. Switch Role&lt;/b&gt;&lt;br&gt;Switch to Owner or Entrant view with admin profile&lt;br&gt;&lt;i&gt;US 03.11.01&lt;/i&gt;" vertex="1">
+          <mxGeometry height="110" width="225" x="355" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="e0" edge="1" parent="1" source="n0" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeWidth=3;" target="n1" value="select campsite">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="n1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=default;strokeWidth=3;" target="n2" value="open Owners">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="n2" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);strokeColor=default;strokeWidth=3;" target="n3" value="open Logs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="n3" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;fontFamily=Helvetica;fontSize=11;fontColor=light-dark(#000000,#000000);fontStyle=0;align=center;verticalAlign=middle;labelBackgroundColor=light-dark(#FFFFFF,#FFFFFF);entryX=1;entryY=0.5;strokeColor=default;strokeWidth=3;entryDx=0;entryDy=0;" target="n4" value="tap Switch">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lg0" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Screen" vertex="1">
+          <mxGeometry height="30" width="100" x="40" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="lg1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Dialog" vertex="1">
+          <mxGeometry height="30" width="100" x="160" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="lg2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="System / Notification" vertex="1">
+          <mxGeometry height="30" width="150" x="280" y="430" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
