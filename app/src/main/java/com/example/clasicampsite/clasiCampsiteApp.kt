@@ -10,8 +10,8 @@ fun clasiCampsiteApp() {
     val navController = rememberNavController()
     NavHost(navController=navController, startDestination = "home") {
         composable (route = "home") { HomeScreen(navController) }
-        composable (route = "races") { CampsiteListScreen(navController) }
-        composable("drivers") { CampSiteReservationScreen(navController) }
-        composable("drivers") { NotificationScreen(navController) }
+        composable (route = "campsites") { CampsiteListScreen(navController) }
+        composable("reservations") { CampSiteReservationScreen(navController) }
+        composable("notifications") { NotificationScreen(navController) }
     }
 }
