@@ -5,6 +5,7 @@ adds the functions for its own data here.
 package com.example.clasicampsite.data
 
 import com.example.clasicampsite.model.Campsite
+import com.example.clasicampsite.model.Lottery
 import com.example.clasicampsite.model.User
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -14,6 +15,7 @@ class DatabaseController {
 
     private val users = FirebaseFirestore.getInstance().collection("users")
     private val campsites = FirebaseFirestore.getInstance().collection("campsites")
+    private val lotteries = FirebaseFirestore.getInstance().collection("lotteries")
 
     /** Returns user saved under [deviceId], or a new empty user if none is saved yet */
     suspend fun getUser(deviceId: String): User {
@@ -50,5 +52,11 @@ class DatabaseController {
         val docRef = if (campsite.id.isBlank()) campsites.document() else campsites.document(campsite.id)
         campsite.id = docRef.id
         docRef.set(campsite).await()
+    }
+
+    /** Fetches the lottery with [lotteryId], or null if it doesn't exist */
+    suspend fun getLottery(lotteryId: String): Lottery? {
+        val document = lotteries.document(lotteryId).get().await()
+        return document.toObject(Lottery::class.java)?.apply { id = document.id }
     }
 }
