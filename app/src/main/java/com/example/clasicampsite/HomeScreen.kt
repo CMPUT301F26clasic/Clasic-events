@@ -50,6 +50,15 @@ fun HomeScreen(navController: NavController) {
             Text("Notifications")
         }
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = { navController.navigate("profile") },
+            modifier = Modifier.testTag("profileButton")
+        ) {
+            Text("Profile")
+        }
+
 
     }
 

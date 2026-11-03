@@ -13,5 +13,7 @@ fun clasiCampsiteApp() {
         composable (route = "campsites") { CampsiteListScreen(navController) }
         composable("reservations") { CampSiteReservationScreen(navController) }
         composable("notifications") { NotificationScreen(navController) }
+        composable("profile") { ProfileScreen(navController) }
+        composable("policy") { PolicyScreen(navController) }
     }
 }
