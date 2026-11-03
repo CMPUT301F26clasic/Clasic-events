@@ -3,6 +3,8 @@
  */
 package com.example.clasicampsite.model
 
+import java.time.LocalDate
+
 /**
  * Represents a campsite.
  *
@@ -17,5 +19,24 @@ data class Campsite(
     var name: String = "",
     var location: String = "",
     var maxOccupancy: Int = 0,
-    var rating: Double = 0.0
+    var rating: Double = 0.0,
+    val availableFrom: LocalDate,
+    val availableTo: LocalDate
 )
+
+data class CampsiteFilter(
+    val location: String = "",
+    val guests: Int? = null,
+    val startDate: LocalDate? = null,
+    val endDate: LocalDate? = null
+) {
+    val activeCount: Int
+        get() = listOf(
+            location.isNotBlank(),
+            guests != null,
+            startDate != null,
+            endDate != null
+        ).count { it }
+}
+
+
