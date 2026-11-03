@@ -37,6 +37,15 @@ fun CampsiteListScreen(navController: NavController) {
         ) {
             Text("Back")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = { navController.navigate("campsite_detail") },
+            modifier = Modifier.testTag("viewDetailsButton")
+        ) {
+            Text("View Campsite Details")
+        }
     }
 
 }
