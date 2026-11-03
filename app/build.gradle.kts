@@ -62,3 +62,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.navigation:navigation-compose:2.9.8")
 }
+
+android {
+    defaultConfig {
+        minSdk = 26
+    }
+}
