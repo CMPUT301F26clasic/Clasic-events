@@ -59,6 +59,14 @@ fun HomeScreen(navController: NavController) {
             Text("Profile")
         }
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = { navController.navigate("my_campsites") },
+            modifier = Modifier.testTag("myCampsitesButton")
+        ) {
+            Text("My Campsites")
+        }
 
     }
 

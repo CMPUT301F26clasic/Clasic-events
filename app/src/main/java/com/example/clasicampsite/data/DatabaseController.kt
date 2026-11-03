@@ -51,4 +51,12 @@ class DatabaseController {
         campsite.id = docRef.id
         docRef.set(campsite).await()
     }
+
+    /** Fetches the campsites registered by the owner with [ownerId] (US 02.03.01) */
+    suspend fun getCampsitesByOwner(ownerId: String): List<Campsite> {
+        val snapshot = campsites.whereEqualTo("ownerId", ownerId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Campsite::class.java)?.apply { id = doc.id }
+        }
+    }
 }
