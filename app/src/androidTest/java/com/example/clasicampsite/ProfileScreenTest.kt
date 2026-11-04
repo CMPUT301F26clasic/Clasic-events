@@ -1,9 +1,9 @@
 /*
- * File: ProfileScreenTest.kt
- * Purpose: Intent tests for the Profile and Policy screens (US 01.07.03, US 01.08.01,
- *          US 01.09.01, US 01.10.01, US 01.11.01).
- * Outstanding issues: Uses the real Firestore database, so it needs internet. The delete test
- *                     deletes the emulator's saved profile.
+Purpose: Intent tests for the Profile and Policy screens (US 01.07.03, US 01.08.01,
+US 01.09.01, US 01.10.01, US 01.11.01).
+Outstanding issues: Uses the real Firestore database, so it needs internet. The delete test
+deletes the emulator's saved profile. Picking a photo opens Android's own
+picker, which these tests can't control, so that is tested by hand.
  */
 package com.example.clasicampsite
 
@@ -84,6 +84,14 @@ class ProfileScreenTest {
     fun showsDeviceId() {
         openProfile()
         composeRule.onNodeWithText("Device ID:", substring = true).assertIsDisplayed()
+    }
+
+
+    /** Profile picture: the screen offers a way to add or change one. */
+    @Test
+    fun showsPictureButton() {
+        openProfile()
+        composeRule.onNodeWithTag("pickImageButton").assertIsDisplayed()
     }
 
     /** US 01.11.01: the policy button opens the policy. */
