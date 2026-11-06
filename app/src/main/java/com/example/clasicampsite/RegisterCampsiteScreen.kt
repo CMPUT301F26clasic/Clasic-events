@@ -39,6 +39,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+//  The following ui and function layouts are from, ChatGPT "Provide a layout for my registercampsitescreen", 2026-11-06
 
 @Composable
 fun RegisterCampsiteScreen(navController: NavController) {

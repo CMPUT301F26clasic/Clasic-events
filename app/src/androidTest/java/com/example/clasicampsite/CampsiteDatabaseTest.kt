@@ -1,3 +1,4 @@
+// The following tests are from, ChatGPT, "Write me test cases for campsites in my database", 2026-11-06
 /*
  * Purpose: Tests campsite registration and storage in Firestore (US 02.01.01).
  * Outstanding issues: Uses the real Firestore database, so it needs internet
@@ -74,10 +75,10 @@ class CampsiteDatabaseTest {
                 FirebaseFirestore.getInstance()
                     .collection("campsites")
                     .document(campsite.id)
-                    /* commented out for now, so that it doesn't delete the test campsite
+                    // comment out if you want it to not delete the test campsite
                     .delete()
                     .await()
-                     */
+
             }
         }
     }

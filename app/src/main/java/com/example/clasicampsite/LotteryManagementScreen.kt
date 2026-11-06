@@ -33,6 +33,7 @@ import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
 import kotlinx.coroutines.launch
 
+//  The following ui and function layouts are from, ChatGPT "Provide a layout for my lotterymanagementscreen", 2026-11-06
 @Composable
 fun LotteryManagementScreen(
     navController: NavController,

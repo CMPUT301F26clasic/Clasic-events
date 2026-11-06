@@ -1,4 +1,4 @@
-
+// The following tests are from, ChatGPT, "Write me test cases for my register campsite screen", 2026-11-06
 /*
  * Purpose: Intent tests for the campsite registration screen (US 02.01.01, US 02.01.02).
  * Outstanding issues: Uses the real Firestore database, so it needs internet.
