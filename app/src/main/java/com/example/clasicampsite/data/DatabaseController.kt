@@ -10,6 +10,7 @@ import com.example.clasicampsite.model.User
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
+import com.google.firebase.firestore.DocumentSnapshot
 
 private val DEFAULT_DATE = LocalDate.of(1970, 1, 1)
 
@@ -44,7 +45,7 @@ class DatabaseController {
     /** Fetches a single campsite by its [campsiteId] from Firestore */
     suspend fun getCampsite(campsiteId: String): Campsite? {
         val document = campsites.document(campsiteId).get().await()
-        return document.toObject(Campsite::class.java)?.apply { id = document.id }
+        return if (document.exists()) document.toCampsite() else null
     }
 
     /** Fetches all campsites from the "campsites" collection */
@@ -56,21 +57,10 @@ class DatabaseController {
     }
 
     /** Returns every campsite for the admin list. Dates are read from "yyyy-MM-dd" text. */
+    /** Returns every campsite for the admin list. */
     suspend fun getAllCampsites(): List<Campsite> {
         val snapshot = campsites.get().await()
-        return snapshot.documents.map { doc ->
-            Campsite(
-                id = doc.id,
-                name = doc.getString("name") ?: "",
-                location = doc.getString("location") ?: "",
-                maxOccupancy = doc.getLong("maxOccupancy")?.toInt() ?: 0,
-                rating = doc.getDouble("rating") ?: 0.0,
-                availableFrom = runCatching { LocalDate.parse(doc.getString("availableFrom")) }
-                    .getOrDefault(DEFAULT_DATE),
-                availableTo = runCatching { LocalDate.parse(doc.getString("availableTo")) }
-                    .getOrDefault(DEFAULT_DATE),
-            )
-        }
+        return snapshot.documents.map { it.toCampsite() }
     }
 
     /** Saves or updates a campsite in Firestore */
@@ -84,4 +74,17 @@ class DatabaseController {
     suspend fun deleteCampsite(campsiteId: String) {
         campsites.document(campsiteId).delete().await()
     }
+
+    /** Builds a Campsite from a Firestore document, reading dates from "yyyy-MM-dd" text. */
+    private fun DocumentSnapshot.toCampsite(): Campsite = Campsite(
+        id = id,
+        name = getString("name") ?: "",
+        location = getString("location") ?: "",
+        maxOccupancy = getLong("maxOccupancy")?.toInt() ?: 0,
+        rating = getDouble("rating") ?: 0.0,
+        availableFrom = runCatching { LocalDate.parse(getString("availableFrom")) }
+            .getOrDefault(DEFAULT_DATE),
+        availableTo = runCatching { LocalDate.parse(getString("availableTo")) }
+            .getOrDefault(DEFAULT_DATE),
+    )
 }
