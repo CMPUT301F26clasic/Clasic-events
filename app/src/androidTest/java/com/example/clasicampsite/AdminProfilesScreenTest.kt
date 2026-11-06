@@ -4,11 +4,14 @@ package com.example.clasicampsite
 
 import android.provider.Settings
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -54,6 +57,8 @@ class AdminProfilesScreenTest {
         saveProfile("Admin Test User")
         composeRule.onNodeWithTag("adminProfilesButton").performClick()
         waitForText("Admin Test User")
+        // The list holds every profile, so scroll to this device's one first
+        composeRule.onNodeWithTag("profileList").performScrollToNode(hasText("Device ID: ${deviceId()}"))
         composeRule.onNodeWithText("Device ID: ${deviceId()}").assertIsDisplayed()
     }
 
@@ -63,6 +68,7 @@ class AdminProfilesScreenTest {
         saveProfile("Remove Me")
         composeRule.onNodeWithTag("adminProfilesButton").performClick()
         waitForText("Remove Me")
+        composeRule.onNodeWithTag("profileList").performScrollToNode(hasTestTag("removeButton_${deviceId()}"))
         composeRule.onNodeWithTag("removeButton_${deviceId()}").performClick()
         composeRule.onNodeWithText("Remove profile?").assertIsDisplayed()
         composeRule.onNodeWithTag("confirmRemoveButton").performClick()
