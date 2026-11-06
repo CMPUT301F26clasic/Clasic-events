@@ -60,7 +60,10 @@ fun AdminProfilesScreen(navController: NavController) {
         } else if (viewModel.users.isEmpty()) {
             Text("No profiles yet.")
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.testTag("profileList"),
+            ) {
                 items(viewModel.users) { user ->
                     val picture = remember(user.profileImage) { decodePicture(user.profileImage) }
                     Card(modifier = Modifier.fillMaxWidth()) {

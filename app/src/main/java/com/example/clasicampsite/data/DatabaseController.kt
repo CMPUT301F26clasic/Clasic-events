@@ -16,6 +16,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
+import com.google.firebase.firestore.SetOptions
 
 private val DEFAULT_DATE = LocalDate.of(1970, 1, 1)
 
@@ -90,10 +91,15 @@ class DatabaseController {
 
         val campsiteData = hashMapOf(
             "id" to campsite.id,
+            "ownerId" to campsite.ownerId,
             "name" to campsite.name,
             "location" to campsite.location,
+            "description" to campsite.description,
             "maxOccupancy" to campsite.maxOccupancy,
+            "pricePerNight" to campsite.pricePerNight,
+            "tags" to campsite.tags,
             "rating" to campsite.rating,
+            "numberOfWinners" to campsite.numberOfWinners,
             "availableFrom" to campsite.availableFrom.toString(),
             "availableTo" to campsite.availableTo.toString()
         )
@@ -109,10 +115,15 @@ class DatabaseController {
     /** Builds a Campsite from a Firestore document, reading dates from "yyyy-MM-dd" text. */
     private fun DocumentSnapshot.toCampsite(): Campsite = Campsite(
         id = id,
+        ownerId = getString("ownerId") ?: "",
         name = getString("name") ?: "",
         location = getString("location") ?: "",
+        description = getString("description") ?: "",
         maxOccupancy = getLong("maxOccupancy")?.toInt() ?: 0,
+        pricePerNight = getDouble("pricePerNight") ?: 0.0,
+        tags = (get("tags") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
         rating = getDouble("rating") ?: 0.0,
+        numberOfWinners = getLong("numberOfWinners")?.toInt() ?: 0,
         availableFrom = runCatching { LocalDate.parse(getString("availableFrom")) }
             .getOrDefault(DEFAULT_DATE),
         availableTo = runCatching { LocalDate.parse(getString("availableTo")) }
@@ -202,6 +213,60 @@ class DatabaseController {
         val numberOfWinners = (document.getLong("numberOfWinners") ?: 0L).toInt()
 
         return Pair(name, numberOfWinners)
+    }
+
+    /** Fetches the campsites registered by the owner with [ownerId] (US 02.03.01) */
+    suspend fun getCampsitesByOwner(ownerId: String): List<Campsite> {
+        val snapshot = campsites.whereEqualTo("ownerId", ownerId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            try {
+                doc.toCampsite()
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    /** Returns this user's saved rating (1-5) for the campsite, or null if they haven't rated it */
+    suspend fun getUserRating(campsiteId: String, userId: String): Int? {
+        val doc = campsites.document(campsiteId)
+            .collection("ratings").document(userId)
+            .get().await()
+        return doc.getLong("rating")?.toInt()
+    }
+
+    /** Saves the user's [rating], then updates the campsite's average. Returns the new average. */
+    suspend fun rateCampsite(campsiteId: String, userId: String, rating: Int): Double {
+        val campsiteRef = campsites.document(campsiteId)
+        val ratingsRef = campsiteRef.collection("ratings")
+
+        ratingsRef.document(userId)
+            .set(mapOf("userId" to userId, "rating" to rating, "ratedAt" to FieldValue.serverTimestamp()))
+            .await()
+
+        val all = ratingsRef.get().await().documents.mapNotNull { it.getLong("rating") }
+        val average = Math.round(all.average() * 10) / 10.0
+
+        campsiteRef.set(mapOf("rating" to average), SetOptions.merge()).await()
+        return average
+    }
+
+    suspend fun isUserInLottery(campsiteId: String, userId: String): Boolean =
+        campsites.document(campsiteId)
+            .collection("lottery").document(userId)
+            .get().await().exists()
+
+    suspend fun joinLottery(campsiteId: String, userId: String) {
+        campsites.document(campsiteId)
+            .collection("lottery").document(userId)
+            .set(mapOf("userId" to userId, "joinedAt" to FieldValue.serverTimestamp()))
+            .await()
+    }
+
+    suspend fun leaveLottery(campsiteId: String, userId: String) {
+        campsites.document(campsiteId)
+            .collection("lottery").document(userId)
+            .delete().await()
     }
 
 }
