@@ -4,6 +4,8 @@
  */
 package com.example.clasicampsite.model
 
+import java.time.LocalDate
+
 /**
  * Represents a campsite.
  *
@@ -16,6 +18,8 @@ package com.example.clasicampsite.model
  * @property pricePerNight Price for one night, in dollars
  * @property tags Short labels such as "lakeside" or "pet friendly"
  * @property rating Average rating (e.g., 0.0 to 5.0)
+ * @property availableFrom Start date of availability
+ * @property availableTo End date of availability
  */
 data class Campsite(
     var id: String = "",
@@ -26,5 +30,23 @@ data class Campsite(
     var maxOccupancy: Int = 0,
     var pricePerNight: Double = 0.0,
     var tags: List<String> = emptyList(),
-    var rating: Double = 0.0
+    var rating: Double = 0.0,
+    val availableFrom: LocalDate = LocalDate.of(1970, 1, 1),
+    val availableTo: LocalDate = LocalDate.of(1970, 1, 1),
+    var numberOfWinners: Int = 0
 )
+
+data class CampsiteFilter(
+    val location: String = "",
+    val guests: Int? = null,
+    val startDate: LocalDate? = null,
+    val endDate: LocalDate? = null
+) {
+    val activeCount: Int
+        get() = listOf(
+            location.isNotBlank(),
+            guests != null,
+            startDate != null,
+            endDate != null
+        ).count { it }
+}

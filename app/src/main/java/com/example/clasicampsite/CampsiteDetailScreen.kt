@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Campsite
+import java.time.LocalDate
 
 @Composable
 fun CampsiteDetailScreen(
@@ -65,8 +66,11 @@ fun CampsiteDetailScreen(
                 name = "Pine Ridge Campsite",
                 location = "Banff National Park, AB",
                 maxOccupancy = 6,
-                rating = 4.8
+                rating = 4.8,
+                availableFrom = LocalDate.of(2027, 5, 1),
+                availableTo = LocalDate.of(2027, 9, 30)
             )
+
             isLoading = false
         }
     }
@@ -182,6 +186,18 @@ fun CampsiteDetailScreen(
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.testTag("campsiteRating")
                             )
+
+                            // Manage Lottery Button
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+                                onClick = {
+                                    navController.navigate("manage_lottery/${site.id}")
+                                },
+                                modifier = Modifier.testTag("manageLotteryButton")
+                            ) {
+                                Text("Manage Lottery")
+                            }
                         }
                     }
                 }

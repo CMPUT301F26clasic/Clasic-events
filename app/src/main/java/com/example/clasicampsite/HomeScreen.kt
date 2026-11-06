@@ -68,6 +68,33 @@ fun HomeScreen(navController: NavController) {
             Text("My Campsites")
         }
 
-    }
+        Spacer(modifier = Modifier.height(8.dp))
 
+        Button(
+            onClick = { navController.navigate("admin_profiles") },
+            modifier = Modifier.testTag("adminProfilesButton")
+        ) {
+            Text("Admin: All profiles")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = { navController.navigate("admin_campsites") },
+            modifier = Modifier.testTag("adminCampsitesButton")
+        ) {
+            Text("Admin: All campsites")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = { navController.navigate("register_campsite") },
+            modifier = Modifier.testTag("registerCampsiteButton")
+        ) {
+            Text("Register a Campground")
+        }
+
+    }
 }
+
