@@ -1,7 +1,7 @@
 /*
- * Purpose: Holds what the campsite form shows and saves it. Used to register a new campsite
- *          (US 02.01.01, US 02.01.02), view one (US 02.01.04) and update it (US 02.01.03).
- * Outstanding issues: Image upload and map location are not added yet.
+ * Purpose: Keeps track of what's typed on the campsite form and handles loading and
+ * saving it to Firestore (US 02.01.01 - 02.01.04).
+ * Outstanding issues: No image upload or map location yet.
  */
 package com.example.clasicampsite
 
@@ -17,20 +17,20 @@ import com.example.clasicampsite.model.Campsite
 import com.example.clasicampsite.model.CampsiteForm
 import kotlinx.coroutines.launch
 
-/** Holds the campsite form's data. */
+/** Holds everything the campsite form needs so it survives screen rotations. */
 class CampsiteFormViewModel(application: Application) : AndroidViewModel(application) {
 
     private val database = DatabaseController()
 
-    /** This device's ID, used as the owner ID */
+    /** The phone's ID, we use it as the owner ID */
     val deviceId: String = Settings.Secure.getString(application.contentResolver, Settings.Secure.ANDROID_ID)
 
     var form by mutableStateOf(CampsiteForm())
-    /** True when registering a new campsite, false when viewing a saved one */
+    /** true = making a new campsite, false = looking at a saved one */
     var isNew by mutableStateOf(true)
-    /** True while the fields can be changed */
+    /** true when the boxes can be typed in */
     var editing by mutableStateOf(true)
-    /** True if this device owns the campsite, so it may edit it */
+    /** only the phone that made the campsite gets to edit it */
     var isOwner by mutableStateOf(true)
     var loaded by mutableStateOf(false)
     var message by mutableStateOf("")
@@ -38,7 +38,10 @@ class CampsiteFormViewModel(application: Application) : AndroidViewModel(applica
     private var original = Campsite()
     private var started = false
 
-    /** Sets up the form once: empty if [campsiteId] is blank, otherwise loads that campsite. */
+    /**
+     * Runs once when the screen opens. Blank [campsiteId] means a new campsite,
+     * otherwise go grab that campsite from Firestore.
+     */
     fun start(campsiteId: String) {
         if (started) return
         started = true
@@ -66,7 +69,7 @@ class CampsiteFormViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    /** Lets the owner change the fields. */
+    /** Unlocks the fields (only if you own it). */
     fun startEditing() {
         if (isOwner) {
             editing = true
@@ -74,14 +77,17 @@ class CampsiteFormViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    /** Throws away unsaved changes. */
+    /** Puts back whatever was saved before and locks the fields again. */
     fun cancelEditing() {
         form = CampsiteForm.from(original)
         editing = false
         message = ""
     }
 
-    /** Checks the form and saves it if valid, then runs [onSaved]. */
+    /**
+     * Checks the form first, and if it's ok saves it to Firestore and then calls [onSaved].
+     * If something's wrong it just shows the error message instead.
+     */
     fun save(onSaved: () -> Unit) {
         val error = form.errorMessage()
         if (error != null) {

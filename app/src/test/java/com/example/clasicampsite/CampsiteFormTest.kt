@@ -1,4 +1,5 @@
 // Purpose: Unit tests for CampsiteForm's checks and conversion (US 02.01.01 - US 02.01.03).
+// Parts of the test file were written with help from Claude (anthropic), 2026-11-3
 
 package com.example.clasicampsite
 

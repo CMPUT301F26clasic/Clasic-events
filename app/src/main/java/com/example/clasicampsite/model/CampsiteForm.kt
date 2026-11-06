@@ -1,13 +1,12 @@
 /*
- * Purpose: The text a campsite owner types when registering or editing a campsite
- *          (US 02.01.01, US 02.01.02, US 02.01.03). Checks it and turns it into a Campsite.
+ * Purpose: Whatever the owner typed into the campsite form. Checks it makes sense
+ * and turns it into a real Campsite (US 02.01.01 - 02.01.03).
  * Outstanding issues: No image or map location fields yet.
- */
+ *  */
 package com.example.clasicampsite.model
 
 /**
- * What the owner has typed into the campsite form. Numbers are kept as text until saved,
- * so the owner can type freely.
+ * The form's text boxes. Numbers stay as text until saving so typing doesn't get blocked.
  *
  * @property name Campsite name, required
  * @property location Address or area, required
@@ -24,9 +23,10 @@ data class CampsiteForm(
     val pricePerNight: String = "",
     val tags: String = "",
 ) {
+
     /**
-     * Checks the form.
-     * @return What is wrong with it, or null if everything is valid.
+     * Makes sure the form is filled in properly.
+     * @return the problem to show the user, or null if it's all good
      */
     fun errorMessage(): String? {
         if (name.isBlank()) return "Name is required"
@@ -38,13 +38,14 @@ data class CampsiteForm(
         return null
     }
 
-    /** Splits the tags text on commas, dropping blanks and repeats. */
+    /** Turns "lake, pets, lake" into [lake, pets] - trims spaces and drops blanks/repeats. */
     fun tagList(): List<String> =
         tags.split(",").map { it.trim() }.filter { it.isNotEmpty() }.distinct()
 
+
     /**
-     * Copies the form onto [original], keeping fields the form doesn't cover (id, owner, rating).
-     * Call only when [errorMessage] is null.
+     * Copies the form onto [original] but keeps stuff the form doesn't touch (id, owner,
+     * rating, dates). Only call this after [errorMessage] says it's ok.
      */
     fun applyTo(original: Campsite): Campsite = original.copy(
         name = name.trim(),
@@ -56,7 +57,7 @@ data class CampsiteForm(
     )
 
     companion object {
-        /** Fills a form from a saved [campsite], so the owner can view or edit it. */
+        /** Fills the form back in from a saved [campsite] so it can be viewed or edited. */
         fun from(campsite: Campsite): CampsiteForm = CampsiteForm(
             name = campsite.name,
             location = campsite.location,
@@ -66,7 +67,7 @@ data class CampsiteForm(
             tags = campsite.tags.joinToString(", "),
         )
 
-        /** Shows 65.0 as "65" and 65.5 as "65.50". */
+        /** Makes prices look normal: 65.0 shows as "65", 65.5 as "65.50". */
         fun formatPrice(price: Double): String =
             if (price % 1.0 == 0.0) price.toLong().toString()
             else String.format(java.util.Locale.US, "%.2f", price)

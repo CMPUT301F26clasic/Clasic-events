@@ -1,7 +1,7 @@
 /*
- * Purpose: Screen where an owner registers a campsite (US 02.01.01, US 02.01.02), views its
- *          details (US 02.01.04) and updates them (US 02.01.03).
- * Outstanding issues: Image upload and map location are not added yet.
+ * Purpose: The screen an owner uses to add a new campsite (US 02.01.01, 02.01.02),
+ * look at one they already made (US 02.01.04), and change it (US 02.01.03).
+ * Outstanding issues: No image upload or map location yet.
  */
 package com.example.clasicampsite
 
@@ -29,10 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-
 /**
- * The campsite form. A blank [campsiteId] registers a new campsite; otherwise the saved
- * campsite is shown read-only until the owner taps Edit.
+ * One screen for both adding and editing. If there's no [campsiteId] it's a blank
+ * form for a new campsite, otherwise it loads that campsite and locks the fields until
+ * the owner hits Edit.
  */
 @Composable
 fun CampsiteFormScreen(navController: NavController, campsiteId: String = "") {

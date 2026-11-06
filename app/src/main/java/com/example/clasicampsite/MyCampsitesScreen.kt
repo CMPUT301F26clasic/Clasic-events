@@ -1,8 +1,7 @@
 /*
- * Purpose: Lists the campsites the owner has registered (US 02.03.01), with a button to
- *          register a new one (US 02.01.01). Tapping a campsite opens it to view or edit.
- * Outstanding issues: None known.
- */
+ * Purpose: Shows all the campsites an owner has made (US 02.03.01) and has a button
+ * to add a new one (US 02.01.01). Tap a campsite to see or edit it.
+ * Outstanding issues: None right now. */
 package com.example.clasicampsite
 
 import androidx.compose.foundation.clickable
@@ -29,7 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.clasicampsite.model.Campsite
 
-/** The My Campsites screen. */
+/** The My Campsites screen. Reloads every time you come back to it. */
 @Composable
 fun MyCampsitesScreen(navController: NavController) {
     val viewModel: MyCampsitesViewModel = viewModel()
@@ -73,7 +72,7 @@ fun MyCampsitesScreen(navController: NavController) {
     }
 }
 
-/** One campsite in the owner's list. Tapping it runs [onClick]. */
+/** One card in the list. Tapping it runs [onClick]. */
 @Composable
 private fun OwnerCampsiteRow(campsite: Campsite, onClick: () -> Unit) {
     Card(

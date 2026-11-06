@@ -1,7 +1,7 @@
 /*
- * Purpose: Holds what the My Campsites screen shows (US 02.03.01): the campsites this
- *          device's owner has registered.
- * Outstanding issues: Owners are identified by device ID only; roles are not checked yet.
+ * Purpose: Gets the list of campsites this phone's owner has made, for the
+ * My Campsites screen (US 02.03.01).
+ * Outstanding issues: Owners are only identified by device ID, no owner/entrant roles yet.
  */
 package com.example.clasicampsite
 
@@ -16,19 +16,19 @@ import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Campsite
 import kotlinx.coroutines.launch
 
-/** Loads the current owner's campsites. */
+/** Loads the owner's campsites for the My Campsites screen. */
 class MyCampsitesViewModel(application: Application) : AndroidViewModel(application) {
 
     private val database = DatabaseController()
 
-    /** This device's ID, used as the owner ID */
+    /** The phone's ID, we use it as the owner ID */
     val deviceId: String = Settings.Secure.getString(application.contentResolver, Settings.Secure.ANDROID_ID)
 
     var campsites by mutableStateOf<List<Campsite>>(emptyList())
     var loading by mutableStateOf(true)
     var message by mutableStateOf("")
 
-    /** Reloads the owner's campsites, sorted by name. */
+    /** Pulls the owner's campsites from Firestore again and sorts them A-Z by name. */
     fun load() {
         viewModelScope.launch {
             loading = true

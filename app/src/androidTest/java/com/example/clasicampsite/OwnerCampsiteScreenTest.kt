@@ -4,6 +4,7 @@
  *          view and update (US 02.01.03, US 02.01.04), and My Campsites (US 02.03.01).
  * Outstanding issues: Uses the real Firestore database, so it needs internet, and the
  *                     campsites it registers are left in the database.
+ * Parts of this file were written with help from Claude (anthropic), 2026-11-03
  */
 package com.example.clasicampsite
 
