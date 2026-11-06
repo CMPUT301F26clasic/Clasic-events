@@ -23,9 +23,7 @@ data class Campsite(
     var maxOccupancy: Int = 0,
     var rating: Double = 0.0,
     val availableFrom: LocalDate = LocalDate.of(1970, 1, 1),
-    val availableTo: LocalDate = LocalDate.of(1970, 1, 1)
-    val availableFrom: LocalDate,
-    val availableTo: LocalDate,
+    val availableTo: LocalDate = LocalDate.of(1970, 1, 1),
     var numberOfWinners: Int = 0
 )
 
