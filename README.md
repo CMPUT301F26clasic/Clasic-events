@@ -62,7 +62,7 @@ Our team used AI tools to help with parts of this project. All AI-assisted code 
 
 | Tool | How it was used |
 | :--- | :--- |
-| Claude (Anthropic) | Help writing tests; resolving Git merge conflicts; explaining Firestore usage |
+| Claude (Anthropic) | Help writing tests; resolving Git merge conflicts; explaining Firestore usage, Creating UML diagram. |
 | ChatGPT (OpenAI) | Suggested UI and function layouts for some screens (e.g. Register Campsite screen) |
 | GitHub Copilot | Code autocompletion in Android Studio |
 | Gemini (Google) | Debugging build and Gradle errors, and help with task division and planning for code sprints |
