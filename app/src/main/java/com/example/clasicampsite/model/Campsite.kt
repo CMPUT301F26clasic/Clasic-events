@@ -24,6 +24,9 @@ data class Campsite(
     var rating: Double = 0.0,
     val availableFrom: LocalDate = LocalDate.of(1970, 1, 1),
     val availableTo: LocalDate = LocalDate.of(1970, 1, 1)
+    val availableFrom: LocalDate,
+    val availableTo: LocalDate,
+    var numberOfWinners: Int = 0
 )
 
 data class CampsiteFilter(

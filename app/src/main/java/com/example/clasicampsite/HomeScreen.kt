@@ -75,6 +75,11 @@ fun HomeScreen(navController: NavController) {
             modifier = Modifier.testTag("adminCampsitesButton")
         ) {
             Text("Admin: All campsites")
+        Button(
+            onClick = { navController.navigate("register_campsite") },
+            modifier = Modifier.testTag("registerCampsiteButton")
+        ) {
+            Text("Register a Campground")
         }
 
     }

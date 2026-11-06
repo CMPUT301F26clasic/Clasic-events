@@ -7,6 +7,15 @@
         <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="AdminCampsitesScreenTest">
+      <SelectionState runConfigName="RegisterCampsiteScreenTest">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DialogSelection />
+      </SelectionState>
+      <SelectionState runConfigName="CampsiteDatabaseTest">
+        <option name="selectionMode" value="DROPDOWN" />
+        <DialogSelection />
+      </SelectionState>
+      <SelectionState runConfigName="LotteryManagementScreenTest">
         <option name="selectionMode" value="DROPDOWN" />
         <DialogSelection />
       </SelectionState>
