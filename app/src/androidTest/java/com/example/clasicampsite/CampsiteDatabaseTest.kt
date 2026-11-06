@@ -74,8 +74,10 @@ class CampsiteDatabaseTest {
                 FirebaseFirestore.getInstance()
                     .collection("campsites")
                     .document(campsite.id)
+                    /* commented out for now, so that it doesn't delete the test campsite
                     .delete()
                     .await()
+                     */
             }
         }
     }
