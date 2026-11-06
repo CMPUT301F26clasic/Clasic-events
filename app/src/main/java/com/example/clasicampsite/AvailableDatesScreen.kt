@@ -1,6 +1,7 @@
 /*
-Purpose: Lets a lottery winner see the dates they can book (US 01.04.01), and choose a campsite
-and dates when the lottery has more than one campsite (US 01.04.02) and reserve them.
+Purpose: Lets a lottery winner see the dates they can book (US 01.04.01), choose a campsite and
+dates when the lottery has more than one campsite (US 01.04.02) and reserve them, or decline the
+reservation (US 01.04.03).
 Outstanding issues: Dates are shown as a list, not a calendar.
 */
 package com.example.clasicampsite
@@ -17,13 +18,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -69,6 +73,7 @@ fun AvailableDatesScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var bookingMessage by remember { mutableStateOf("") }
     var reservedMessage by remember { mutableStateOf("") }
+    var showDeclineDialog by remember { mutableStateOf(false) }
 
     // Load the lottery and the names of its campsites when the screen opens
     LaunchedEffect(lotteryId) {
@@ -125,7 +130,9 @@ fun AvailableDatesScreen(
             Text(currentLottery.title, fontSize = 18.sp)
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (!currentLottery.isWinner(deviceId)) {
+            if (currentLottery.hasDeclined(deviceId)) {
+                Text("You declined this lottery.", modifier = Modifier.testTag("declinedText"))
+            } else if (!currentLottery.isWinner(deviceId)) {
                 Text("You did not win this lottery.", modifier = Modifier.testTag("notWinnerText"))
             } else {
                 // US 01.04.02: pick a campsite when the lottery has more than one
@@ -228,6 +235,14 @@ fun AvailableDatesScreen(
                     Text(if (isSaving) "Reserving..." else "Reserve")
                 }
 
+                // US 01.04.03: decline the reservation
+                OutlinedButton(
+                    onClick = { showDeclineDialog = true },
+                    modifier = Modifier.fillMaxWidth().testTag("declineButton")
+                ) {
+                    Text("Decline")
+                }
+
                 if (reservedMessage.isNotBlank()) {
                     Text(reservedMessage, modifier = Modifier.testTag("reservedMessage"))
                 }
@@ -238,4 +253,34 @@ fun AvailableDatesScreen(
         }
     }
 
+    if (showDeclineDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeclineDialog = false },
+            title = { Text("Decline this reservation?") },
+            text = { Text("You will give up your spot in this lottery.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeclineDialog = false
+                        coroutineScope.launch {
+                            try {
+                                dbController.declineLottery(lotteryId, deviceId)
+                                lottery = lottery?.let { it.copy(declined = it.declined + deviceId) }
+                            } catch (e: Exception) {
+                                bookingMessage = "Failed to decline: ${e.localizedMessage}"
+                            }
+                        }
+                    },
+                    modifier = Modifier.testTag("confirmDeclineButton")
+                ) {
+                    Text("Decline")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeclineDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }

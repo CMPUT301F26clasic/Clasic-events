@@ -1,6 +1,7 @@
 /*
 Purpose: Intent tests for booking a campsite after winning a lottery: seeing available dates
-(US 01.04.01), and picking a campsite and dates and reserving them (US 01.04.02).
+(US 01.04.01), picking a campsite and dates and reserving them (US 01.04.02), and declining
+(US 01.04.03).
 Outstanding issues: Uses the real Firestore database, so it needs internet. It saves a test
 lottery and deletes its test reservations before each test.
 */
@@ -114,5 +115,15 @@ class BookingTest {
         waitFor("reservedMessage")
         composeRule.onNodeWithTag("reservedMessage").assertIsDisplayed()
         assertTrue(composeRule.onAllNodesWithTag("date_2099-07-01").fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test
+    fun winnerCanDecline() {
+        openScreen()
+        composeRule.onNodeWithTag("declineButton").performClick()
+        composeRule.onNodeWithTag("confirmDeclineButton").performClick()
+
+        waitFor("declinedText")
+        composeRule.onNodeWithTag("declinedText").assertIsDisplayed()
     }
 }

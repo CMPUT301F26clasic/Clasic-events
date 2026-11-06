@@ -1,4 +1,4 @@
-// Purpose: Unit tests for Lottery: who won and which dates are still free.
+// Purpose: Unit tests for Lottery: who won, who declined, and which dates are still free.
 
 package com.example.clasicampsite
 
@@ -14,7 +14,8 @@ class LotteryTest {
         id = "test-lottery",
         title = "May weekends",
         campsiteIds = listOf("hinton-1", "jasper-1"),
-        winners = listOf("device-a"),
+        winners = listOf("device-a", "device-c"),
+        declined = listOf("device-c"),
         availableDates = listOf("2027-05-14", "2027-05-07", "2027-05-08", "2027-05-15"),
     )
 
@@ -26,6 +27,13 @@ class LotteryTest {
     @Test
     fun someoneWhoDidNotWinIsNotAWinner() {
         assertFalse(lottery.isWinner("device-b"))
+    }
+
+    @Test
+    fun winnerWhoDeclinedIsNoLongerAWinner() {
+        assertFalse(lottery.isWinner("device-c"))
+        assertTrue(lottery.hasDeclined("device-c"))
+        assertFalse(lottery.hasDeclined("device-a"))
     }
 
     @Test

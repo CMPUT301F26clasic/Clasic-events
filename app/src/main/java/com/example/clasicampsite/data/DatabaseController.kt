@@ -10,6 +10,7 @@ import com.example.clasicampsite.model.Campsite
 import com.example.clasicampsite.model.Lottery
 import com.example.clasicampsite.model.Reservation
 import com.example.clasicampsite.model.User
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -75,6 +76,11 @@ class DatabaseController {
         val docRef = if (lottery.id.isBlank()) lotteries.document() else lotteries.document(lottery.id)
         lottery.id = docRef.id
         docRef.set(lottery).await()
+    }
+
+    /** Records that [deviceId] declined the lottery with [lotteryId] (US 01.04.03) */
+    suspend fun declineLottery(lotteryId: String, deviceId: String) {
+        lotteries.document(lotteryId).update("declined", FieldValue.arrayUnion(deviceId)).await()
     }
 
     /** Fetches every reservation for the campsite with [campsiteId] */
