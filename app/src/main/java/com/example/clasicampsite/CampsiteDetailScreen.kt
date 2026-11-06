@@ -74,8 +74,7 @@ fun CampsiteDetailScreen(
                     showRating = fetched.rating
                     alreadyinLottery =
                         userId != null && dbController.isUserInLottery(campsiteId, userId)
-                    userrating = if( userId != null) dbController.getrating(campsiteId, userId) else null
-                }
+                    userrating = dbController.getUserRating(campsiteId, userId)}
                 else {
                     errorMessage = "Campsite not found."
                 }
