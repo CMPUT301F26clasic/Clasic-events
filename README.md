@@ -7,24 +7,27 @@
 
 | Name | GitHub Username |
 | :--- | :--- |
-| Team Member 1 | [username](https://github.com) |
-| Team Member 2 | [username](https://github.com) |
-| Team Member 3 | [username](https://github.com) |
-| Team Member 4 | [username](https://github.com) |
+| Emery Theroux | [emery-collab](https://github.com/emery-collab) |
+| Evan Rosenblood | [EvanRosenblood](https://github.com/EvanRosenblood) |
+| Keya Modi | [Keya_M](https://github.com/KeyaModi) |
+| Dhavanil Patel | [dhavanilp](https://github.com/dhavanilp) |
+| Manush Patel | [Manush Patel](https://github.com/Manush10) |
+| Steve Thomas | [SteveThomas3269](https://github.com/SteveThomas3269) |
 
 ## Project Documentation
 The following documents outline the initial design, planning, and structure of Clasic-events.
 
 ### UI Mockups
 Our UI mockups illustrate the proposed screens and interface design of the application, providing a visual representation of the intended user experience.
-* [View UI Mockups (PDF)](URL_TO_PDF_HERE)
+* [View UI Mockups (PDF)](https://github.com/CMPUT301F26clasic/Clasic-events/blob/project-part-3/docs/mockups/Mockups%20-2.pdf)
 
 ### Storyboard
 Our storyboard illustrates the intended user experience and navigation flow throughout the application, demonstrating how users interact with the various screens and features.
-* [View Storyboard](URL_TO_STORYBOARD_HERE)
+* [View Storyboard](https://github.com/CMPUT301F26clasic/Clasic-events/tree/project-part-3/docs/Storyboard)
 
 ### CRC Cards
 Our CRC cards outline the primary classes in our application, including their responsibilities and collaborators. These cards helped guide our initial object-oriented design and application architecture.
+* [View CRC Cards](https://github.com/CMPUT301F26clasic/Clasic-events/blob/project-part-3/docs/crc/CMPUT301%20ProjectPart2%20CRC.drawio.png)
 
 ## Project Wiki
-For additional information about the project, design decisions, implementation details, and development documentation, visit our [GitHub Wiki](URL_TO_WIKI_HERE).
+For additional information about the project, design decisions, implementation details, and development documentation, visit our [GitHub Wiki](https://github.com/CMPUT301F26clasic/Clasic-events/wiki).
