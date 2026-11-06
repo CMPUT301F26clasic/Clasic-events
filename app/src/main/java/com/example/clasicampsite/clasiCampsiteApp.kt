@@ -17,6 +17,7 @@ fun clasiCampsiteApp() {
         composable("policy") { PolicyScreen(navController) }
         composable("campsite_detail") { CampsiteDetailScreen(navController) }
         composable("admin_profiles") { AdminProfilesScreen(navController) }
+        composable("admin_campsites") {AdminCampsitesScreen(navController)}
         composable("campsite_detail/{campsiteId}") { backStackEntry ->
             val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
             CampsiteDetailScreen(navController, campsiteId = campsiteId)

@@ -9,6 +9,9 @@ import com.example.clasicampsite.model.Campsite
 import com.example.clasicampsite.model.User
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import java.time.LocalDate
+
+private val DEFAULT_DATE = LocalDate.of(1970, 1, 1)
 
 /** Reads and writes app data in Firestore. */
 class DatabaseController {
@@ -52,10 +55,33 @@ class DatabaseController {
         }
     }
 
+    /** Returns every campsite for the admin list. Dates are read from "yyyy-MM-dd" text. */
+    suspend fun getAllCampsites(): List<Campsite> {
+        val snapshot = campsites.get().await()
+        return snapshot.documents.map { doc ->
+            Campsite(
+                id = doc.id,
+                name = doc.getString("name") ?: "",
+                location = doc.getString("location") ?: "",
+                maxOccupancy = doc.getLong("maxOccupancy")?.toInt() ?: 0,
+                rating = doc.getDouble("rating") ?: 0.0,
+                availableFrom = runCatching { LocalDate.parse(doc.getString("availableFrom")) }
+                    .getOrDefault(DEFAULT_DATE),
+                availableTo = runCatching { LocalDate.parse(doc.getString("availableTo")) }
+                    .getOrDefault(DEFAULT_DATE),
+            )
+        }
+    }
+
     /** Saves or updates a campsite in Firestore */
     suspend fun saveCampsite(campsite: Campsite) {
         val docRef = if (campsite.id.isBlank()) campsites.document() else campsites.document(campsite.id)
         campsite.id = docRef.id
         docRef.set(campsite).await()
+    }
+
+    /** Deletes the campsite with [campsiteId] from Firestore */
+    suspend fun deleteCampsite(campsiteId: String) {
+        campsites.document(campsiteId).delete().await()
     }
 }

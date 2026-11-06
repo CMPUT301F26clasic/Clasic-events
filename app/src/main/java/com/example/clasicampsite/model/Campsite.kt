@@ -13,6 +13,8 @@ import java.time.LocalDate
  * @property location Physical location / address of the campsite
  * @property maxOccupancy Maximum number of guests allowed
  * @property rating Average rating (e.g., 0.0 to 5.0)
+ * @property availableFrom Start date of availability
+ * @property availableTo End date of availability
  */
 data class Campsite(
     var id: String = "",
@@ -20,8 +22,8 @@ data class Campsite(
     var location: String = "",
     var maxOccupancy: Int = 0,
     var rating: Double = 0.0,
-    val availableFrom: LocalDate,
-    val availableTo: LocalDate
+    val availableFrom: LocalDate = LocalDate.of(1970, 1, 1),
+    val availableTo: LocalDate = LocalDate.of(1970, 1, 1)
 )
 
 data class CampsiteFilter(
@@ -38,5 +40,3 @@ data class CampsiteFilter(
             endDate != null
         ).count { it }
 }
-
-
