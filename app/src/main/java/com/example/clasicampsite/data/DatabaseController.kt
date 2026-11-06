@@ -6,6 +6,7 @@ package com.example.clasicampsite.data
 
 import com.example.clasicampsite.model.Campsite
 import com.example.clasicampsite.model.User
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -51,4 +52,17 @@ class DatabaseController {
         campsite.id = docRef.id
         docRef.set(campsite).await()
     }
+
+    suspend fun isUserInLottery(campsiteId: String, userId: String): Boolean = campsites.document(campsiteId).collection("lottery").document(userId).get().await().exists()
+
+    suspend fun joinLottery(campsiteId: String, userId: String){
+       campsites.document(campsiteId).collection("lottery").document(userId).set(mapOf("userId" to userId, "joinedAt" to FieldValue.serverTimestamp())).await()
+    }
+
+    suspend fun leaveLottery(campsiteId: String, userId: String) {
+        campsites.document(campsiteId)
+            .collection("lottery").document(userId)
+            .delete().await()
+    }
+
 }

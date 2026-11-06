@@ -21,16 +21,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import android.provider.Settings
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Campsite
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 @Composable
@@ -42,6 +46,16 @@ fun CampsiteDetailScreen(
     var campsite by remember { mutableStateOf<Campsite?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    //keya adding variables for already in lottery list //
+    var alreadyinLottery by remember { mutableStateOf(false) }
+    var updateLottery by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val userId = remember {
+        Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+    }
+
+
 
     // Fetch details from Firestore when campsiteId changes
     LaunchedEffect(campsiteId) {
@@ -51,7 +65,10 @@ fun CampsiteDetailScreen(
                 val fetched = dbController.getCampsite(campsiteId)
                 if (fetched != null) {
                     campsite = fetched
-                } else {
+                    alreadyinLottery =
+                        userId != null && dbController.isUserInLottery(campsiteId, userId)
+                }
+                else {
                     errorMessage = "Campsite not found."
                 }
             } catch (e: Exception) {
@@ -114,6 +131,51 @@ fun CampsiteDetailScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            val onToggle: () -> Unit = {
+                if (userId != null) {
+                    scope.launch {
+                        updateLottery = true
+                        try {
+                            if (alreadyinLottery) {
+                                dbController.leaveLottery(site.id, userId)
+                                alreadyinLottery = false
+                            } else {
+                                dbController.joinLottery(site.id, userId)
+                                alreadyinLottery = true
+                            }
+                        } catch (e: Exception) {
+                            errorMessage = "Lottery update failed: ${e.localizedMessage}"
+                        } finally {
+                            updateLottery = false
+                        }
+                    }
+                }
+            }
+
+            if (alreadyinLottery) {
+                OutlinedButton(
+                    onClick = onToggle,
+                    enabled = !updateLottery && userId != null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("leaveLotteryButton")
+                ) {
+                    Text(if (updateLottery) "Leaving..." else "Leave Lottery")
+                }
+            } else {
+                Button(
+                    onClick = onToggle,
+                    enabled = !updateLottery && userId != null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("joinLotteryButton")
+                ) {
+                    Text(if (updateLottery) "Joining..." else "Join Lottery")
+                }
+            }
 
             Card(
                 modifier = Modifier
