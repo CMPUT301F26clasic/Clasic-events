@@ -4,6 +4,7 @@ this device, saves their details and notification setting and deletes their prof
  */
 package com.example.clasicampsite
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.provider.Settings
 import androidx.compose.runtime.getValue
@@ -26,6 +27,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     private val database = DatabaseController()
 
     /** This device's ID */
+    @SuppressLint("HardwareIds")
     val deviceId: String = Settings.Secure.getString(application.contentResolver, Settings.Secure.ANDROID_ID)
 
     var name by mutableStateOf("")
