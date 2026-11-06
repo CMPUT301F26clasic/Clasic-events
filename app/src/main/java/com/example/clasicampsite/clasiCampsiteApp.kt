@@ -21,5 +21,6 @@ fun clasiCampsiteApp() {
             val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
             CampsiteDetailScreen(navController, campsiteId = campsiteId)
         }
+        composable("register_campsite") { RegisterCampsiteScreen(navController) }
     }
 }
