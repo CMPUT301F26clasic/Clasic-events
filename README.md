@@ -50,7 +50,7 @@ Our main classes, with their responsibilities and collaborators. These guided ou
 The following UML class diagram illustrates the structure and architecture of the Clasic-events application. It provides a visual representation of the classes within the application, their attributes, methods, and relationships.
 
 The diagram helps demonstrate how the different components of the application interact and how the overall system is organized.
-* [View CRC Cards](https://github.com/CMPUT301F26clasic/Clasic-events/wiki/UML-Diagram)
+* [View UML Diagram](https://github.com/CMPUT301F26clasic/Clasic-events/wiki/UML-Diagram)
 
 ## Project Wiki
 For design decisions, implementation details, and development notes, see our [GitHub Wiki](https://github.com/CMPUT301F26clasic/Clasic-events/wiki).
