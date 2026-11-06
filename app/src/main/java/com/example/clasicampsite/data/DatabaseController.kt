@@ -16,6 +16,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
+import com.google.firebase.firestore.SetOptions
 
 private val DEFAULT_DATE = LocalDate.of(1970, 1, 1)
 
@@ -224,6 +225,48 @@ class DatabaseController {
                 null
             }
         }
+    }
+
+    /** Returns this user's saved rating (1-5) for the campsite, or null if they haven't rated it */
+    suspend fun getUserRating(campsiteId: String, userId: String): Int? {
+        val doc = campsites.document(campsiteId)
+            .collection("ratings").document(userId)
+            .get().await()
+        return doc.getLong("rating")?.toInt()
+    }
+
+    /** Saves the user's [rating], then updates the campsite's average. Returns the new average. */
+    suspend fun rateCampsite(campsiteId: String, userId: String, rating: Int): Double {
+        val campsiteRef = campsites.document(campsiteId)
+        val ratingsRef = campsiteRef.collection("ratings")
+
+        ratingsRef.document(userId)
+            .set(mapOf("userId" to userId, "rating" to rating, "ratedAt" to FieldValue.serverTimestamp()))
+            .await()
+
+        val all = ratingsRef.get().await().documents.mapNotNull { it.getLong("rating") }
+        val average = Math.round(all.average() * 10) / 10.0
+
+        campsiteRef.set(mapOf("rating" to average), SetOptions.merge()).await()
+        return average
+    }
+
+    suspend fun isUserInLottery(campsiteId: String, userId: String): Boolean =
+        campsites.document(campsiteId)
+            .collection("lottery").document(userId)
+            .get().await().exists()
+
+    suspend fun joinLottery(campsiteId: String, userId: String) {
+        campsites.document(campsiteId)
+            .collection("lottery").document(userId)
+            .set(mapOf("userId" to userId, "joinedAt" to FieldValue.serverTimestamp()))
+            .await()
+    }
+
+    suspend fun leaveLottery(campsiteId: String, userId: String) {
+        campsites.document(campsiteId)
+            .collection("lottery").document(userId)
+            .delete().await()
     }
 
 }
