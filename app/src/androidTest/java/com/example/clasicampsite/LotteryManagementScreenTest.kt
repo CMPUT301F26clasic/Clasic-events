@@ -47,28 +47,40 @@ class LotteryManagementScreenTest {
 
     /** Creates a campsite document for this test. */
     @Before
-    fun createTestCampsite() = runBlocking {
-        firestore.collection("campsites")
-            .document(testCampsiteId).set(mapOf("id" to testCampsiteId, "name" to "Lottery Test Campsite", "numberOfWinners" to 2)).await()
+    fun createTestCampsite(): Unit {
+        runBlocking {
+            firestore.collection("campsites")
+                .document(testCampsiteId)
+                .set(
+                    mapOf(
+                        "id" to testCampsiteId,
+                        "name" to "Lottery Test Campsite",
+                        "numberOfWinners" to 2
+                    )
+                ).await()
+        }
     }
 
     /** Deletes the test campsite and any entrants/users created for it. */
     @After
-    fun deleteTestData() = runBlocking {
-        val entrants = firestore.collection("lottery_entrants").whereEqualTo("campsiteId", testCampsiteId).get().await()
+    fun deleteTestData(): Unit {
+        runBlocking {
+            val entrants = firestore.collection("lottery_entrants")
+                .whereEqualTo("campsiteId", testCampsiteId).get().await()
 
-        // Delete entrant documents and their associated test users.
-        entrants.documents.forEach { entrant ->
-            val userId = entrant.getString("userId")
+            // Delete entrant documents and their associated test users.
+            entrants.documents.forEach { entrant ->
+                val userId = entrant.getString("userId")
 
-            entrant.reference.delete().await()
+                entrant.reference.delete().await()
 
-            if (!userId.isNullOrBlank()) {
-                firestore.collection("users").document(userId).delete().await()
+                if (!userId.isNullOrBlank()) {
+                    firestore.collection("users").document(userId).delete().await()
+                }
             }
-        }
 
-        firestore.collection("campsites").document(testCampsiteId).delete().await()
+            firestore.collection("campsites").document(testCampsiteId).delete().await()
+        }
     }
 
     /** Opens the lottery management screen for the test campsite. */
@@ -89,17 +101,22 @@ class LotteryManagementScreenTest {
     }
 
     /** Adds a test user and lottery entrant to Firestore. */
-    private fun addTestEntrant(name: String) = runBlocking {
+    private fun addTestEntrant(name: String): Unit {
+        runBlocking {
         val userId = "lottery_test_user_${UUID.randomUUID()}"
         val entrantId = "lottery_test_entrant_${UUID.randomUUID()}"
 
         // Create the user document.
         firestore.collection("users")
-            .document(userId).set(mapOf("id" to userId, "name" to name, "email" to "test@example.com")).await()
+            .document(userId)
+            .set(mapOf("id" to userId, "name" to name, "email" to "test@example.com")).await()
 
         // Associate the user with the test campsite's lottery.
         firestore.collection("lottery_entrants")
-            .document(entrantId).set(mapOf("id" to entrantId, "campsiteId" to testCampsiteId, "userId" to userId)).await()
+            .document(entrantId)
+            .set(mapOf("id" to entrantId, "campsiteId" to testCampsiteId, "userId" to userId))
+            .await()
+        }
     }
 
     /** US 02.04.05, US 02.09.01: the lottery management screen can be opened. */

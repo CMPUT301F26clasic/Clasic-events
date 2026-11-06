@@ -63,5 +63,10 @@ class RegisterCampsiteScreenTest {
 
         composeRule.onNodeWithTag("availableToField")
             .assertIsDisplayed()
+
+        composeRule.onNodeWithTag("numberOfWinnersField")
+            .assertIsDisplayed()
+
     }
 }
+

@@ -187,7 +187,7 @@ fun CampsiteDetailScreen(
                                 modifier = Modifier.testTag("campsiteRating")
                             )
 
-                            // Campsite details button
+                            // Manage Lottery Button
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Button(

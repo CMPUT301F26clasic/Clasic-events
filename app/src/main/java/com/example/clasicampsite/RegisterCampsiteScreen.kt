@@ -50,6 +50,7 @@ fun RegisterCampsiteScreen(navController: NavController) {
     var name by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var maxOccupancy by remember { mutableStateOf("") }
+    var numberOfWinners by remember { mutableStateOf("") }
 
     var availableFrom by remember { mutableStateOf<LocalDate?>(null) }
     var availableTo by remember { mutableStateOf<LocalDate?>(null) }
@@ -108,6 +109,20 @@ fun RegisterCampsiteScreen(navController: NavController) {
                 .testTag("occupancyField")
         )
 
+        OutlinedTextField(
+            value = numberOfWinners,
+            onValueChange = {
+                numberOfWinners = it.filter(Char::isDigit)
+            },
+            label = { Text("Number of Lottery Winners") },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("numberOfWinnersField")
+        )
+
         Spacer(modifier = Modifier.height(8.dp))
 
         Text("Campground Availability", fontSize = 18.sp)
@@ -134,6 +149,7 @@ fun RegisterCampsiteScreen(navController: NavController) {
         Button(
             onClick = {
                 val occupancy = maxOccupancy.toIntOrNull()
+                val winners = numberOfWinners.toIntOrNull()
 
                 when {
                     name.isBlank() ->
@@ -144,6 +160,9 @@ fun RegisterCampsiteScreen(navController: NavController) {
 
                     occupancy == null || occupancy <= 0 ->
                         message = "Please enter a valid maximum occupancy."
+
+                    winners == null || winners <= 0 ->
+                        message = "Please enter a valid number of lottery winners."
 
                     availableFrom == null || availableTo == null ->
                         message = "Please select both availability dates."
@@ -158,7 +177,8 @@ fun RegisterCampsiteScreen(navController: NavController) {
                             maxOccupancy = occupancy,
                             rating = 0.0,
                             availableFrom = availableFrom!!,
-                            availableTo = availableTo!!
+                            availableTo = availableTo!!,
+                            numberOfWinners = winners
                         )
 
                         scope.launch {
@@ -175,6 +195,7 @@ fun RegisterCampsiteScreen(navController: NavController) {
                                 maxOccupancy = ""
                                 availableFrom = null
                                 availableTo = null
+                                numberOfWinners = ""
 
                             } catch (e: Exception) {
                                 message = "Registration failed: ${e.localizedMessage}"
