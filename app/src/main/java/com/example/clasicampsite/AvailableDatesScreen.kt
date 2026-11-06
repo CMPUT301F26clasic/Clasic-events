@@ -46,7 +46,9 @@ import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Lottery
 import com.example.clasicampsite.model.Reservation
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -221,7 +223,10 @@ fun AvailableDatesScreen(
                                         deviceId,
                                         "Your reservation at ${reservation.campsiteName} is confirmed for ${reservation.dates.joinToString(", ")}."
                                     )
-                                    navController.navigate("reservation_confirmation/${reservation.id}")
+                                    // Changing screens has to happen on the main thread
+                                    withContext(Dispatchers.Main) {
+                                        navController.navigate("reservation_confirmation/${reservation.id}")
+                                    }
                                 }
                             } catch (e: Exception) {
                                 bookingMessage = "Failed to reserve: ${e.localizedMessage}"
