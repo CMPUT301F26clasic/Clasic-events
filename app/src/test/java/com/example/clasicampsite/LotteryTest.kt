@@ -1,3 +1,5 @@
+// Purpose: Unit tests for Lottery: who won and which dates are still free.
+
 package com.example.clasicampsite
 
 import com.example.clasicampsite.model.Lottery
@@ -11,10 +13,9 @@ class LotteryTest {
     private val lottery = Lottery(
         id = "test-lottery",
         title = "May weekends",
-        campsiteId = "hinton-1",
+        campsiteIds = listOf("hinton-1", "jasper-1"),
         winners = listOf("device-a"),
         availableDates = listOf("2027-05-14", "2027-05-07", "2027-05-08", "2027-05-15"),
-        bookedDates = listOf("2027-05-08"),
     )
 
     @Test
@@ -28,23 +29,32 @@ class LotteryTest {
     }
 
     @Test
+    fun lotteryWithTwoCampsitesHasMultipleCampsites() {
+        assertTrue(lottery.hasMultipleCampsites())
+        assertFalse(lottery.copy(campsiteIds = listOf("hinton-1")).hasMultipleCampsites())
+    }
+
+    @Test
     fun bookedDatesAreNotFree() {
-        assertEquals(listOf("2027-05-07", "2027-05-14", "2027-05-15"), lottery.freeDates("2027-05-01"))
+        assertEquals(
+            listOf("2027-05-07", "2027-05-14", "2027-05-15"),
+            lottery.freeDates("2027-05-01", listOf("2027-05-08")),
+        )
     }
 
     @Test
     fun pastDatesAreNotFree() {
-        assertEquals(listOf("2027-05-14", "2027-05-15"), lottery.freeDates("2027-05-10"))
+        assertEquals(listOf("2027-05-14", "2027-05-15"), lottery.freeDates("2027-05-10", emptyList()))
     }
 
     @Test
     fun todayIsStillFree() {
-        assertEquals(listOf("2027-05-14", "2027-05-15"), lottery.freeDates("2027-05-14"))
+        assertEquals(listOf("2027-05-14", "2027-05-15"), lottery.freeDates("2027-05-14", emptyList()))
     }
 
     @Test
     fun noDatesLeftGivesAnEmptyList() {
-        assertTrue(lottery.freeDates("2027-06-01").isEmpty())
-        assertTrue(Lottery().freeDates("2027-05-01").isEmpty())
+        assertTrue(lottery.freeDates("2027-06-01", emptyList()).isEmpty())
+        assertTrue(Lottery().freeDates("2027-05-01", emptyList()).isEmpty())
     }
 }

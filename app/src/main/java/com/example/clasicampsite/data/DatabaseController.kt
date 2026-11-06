@@ -1,12 +1,14 @@
 /*
 Purpose: Saves, loads and deletes the app's data in Firebase Firestore. Each part of the app
 adds the functions for its own data here.
-Outstanding issues: Only users and campsites are handled so far.
+Outstanding issues: Booking checks that dates are still free right before saving, but two
+people booking at the exact same moment could still both succeed (needs a transaction).
  */
 package com.example.clasicampsite.data
 
 import com.example.clasicampsite.model.Campsite
 import com.example.clasicampsite.model.Lottery
+import com.example.clasicampsite.model.Reservation
 import com.example.clasicampsite.model.User
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -17,6 +19,7 @@ class DatabaseController {
     private val users = FirebaseFirestore.getInstance().collection("users")
     private val campsites = FirebaseFirestore.getInstance().collection("campsites")
     private val lotteries = FirebaseFirestore.getInstance().collection("lotteries")
+    private val reservations = FirebaseFirestore.getInstance().collection("reservations")
 
     /** Returns user saved under [deviceId], or a new empty user if none is saved yet */
     suspend fun getUser(deviceId: String): User {
@@ -65,5 +68,27 @@ class DatabaseController {
     suspend fun getLottery(lotteryId: String): Lottery? {
         val document = lotteries.document(lotteryId).get().await()
         return document.toObject(Lottery::class.java)?.apply { id = document.id }
+    }
+
+    /** Saves or updates [lottery] */
+    suspend fun saveLottery(lottery: Lottery) {
+        val docRef = if (lottery.id.isBlank()) lotteries.document() else lotteries.document(lottery.id)
+        lottery.id = docRef.id
+        docRef.set(lottery).await()
+    }
+
+    /** Fetches every reservation for the campsite with [campsiteId] */
+    suspend fun getReservationsForCampsite(campsiteId: String): List<Reservation> {
+        val snapshot = reservations.whereEqualTo("campsiteId", campsiteId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Reservation::class.java)?.apply { id = doc.id }
+        }
+    }
+
+    /** Saves a new [reservation] and gives it an ID (US 01.04.02) */
+    suspend fun saveReservation(reservation: Reservation) {
+        val docRef = if (reservation.id.isBlank()) reservations.document() else reservations.document(reservation.id)
+        reservation.id = docRef.id
+        docRef.set(reservation).await()
     }
 }
