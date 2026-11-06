@@ -9,6 +9,7 @@
 package com.example.clasicampsite
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -109,8 +110,9 @@ class OwnerCampsiteScreenTest {
         waitForText(name)
 
         composeRule.onNodeWithText(name).performClick()
-        waitForText("Campsite Details")
-        composeRule.onNodeWithText("Hinton, AB").assertIsDisplayed()
+        // The title shows right away, but the fields only appear once Firestore has loaded.
+        waitForTag("editCampsiteButton")
+        composeRule.onNodeWithTag("campsiteLocationField").assertTextContains("Hinton, AB")
 
         composeRule.onNodeWithTag("editCampsiteButton").performScrollTo().performClick()
         type("campsitePriceField", "80")
