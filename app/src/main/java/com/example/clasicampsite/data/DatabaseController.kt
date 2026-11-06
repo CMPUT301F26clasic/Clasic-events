@@ -91,10 +91,15 @@ class DatabaseController {
 
         val campsiteData = hashMapOf(
             "id" to campsite.id,
+            "ownerId" to campsite.ownerId,
             "name" to campsite.name,
             "location" to campsite.location,
+            "description" to campsite.description,
             "maxOccupancy" to campsite.maxOccupancy,
+            "pricePerNight" to campsite.pricePerNight,
+            "tags" to campsite.tags,
             "rating" to campsite.rating,
+            "numberOfWinners" to campsite.numberOfWinners,
             "availableFrom" to campsite.availableFrom.toString(),
             "availableTo" to campsite.availableTo.toString()
         )
@@ -110,10 +115,15 @@ class DatabaseController {
     /** Builds a Campsite from a Firestore document, reading dates from "yyyy-MM-dd" text. */
     private fun DocumentSnapshot.toCampsite(): Campsite = Campsite(
         id = id,
+        ownerId = getString("ownerId") ?: "",
         name = getString("name") ?: "",
         location = getString("location") ?: "",
+        description = getString("description") ?: "",
         maxOccupancy = getLong("maxOccupancy")?.toInt() ?: 0,
+        pricePerNight = getDouble("pricePerNight") ?: 0.0,
+        tags = (get("tags") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
         rating = getDouble("rating") ?: 0.0,
+        numberOfWinners = getLong("numberOfWinners")?.toInt() ?: 0,
         availableFrom = runCatching { LocalDate.parse(getString("availableFrom")) }
             .getOrDefault(DEFAULT_DATE),
         availableTo = runCatching { LocalDate.parse(getString("availableTo")) }
@@ -203,6 +213,18 @@ class DatabaseController {
         val numberOfWinners = (document.getLong("numberOfWinners") ?: 0L).toInt()
 
         return Pair(name, numberOfWinners)
+    }
+
+    /** Fetches the campsites registered by the owner with [ownerId] (US 02.03.01) */
+    suspend fun getCampsitesByOwner(ownerId: String): List<Campsite> {
+        val snapshot = campsites.whereEqualTo("ownerId", ownerId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            try {
+                doc.toCampsite()
+            } catch (e: Exception) {
+                null
+            }
+        }
     }
 
     /** Returns this user's saved rating (1-5) for the campsite, or null if they haven't rated it */
