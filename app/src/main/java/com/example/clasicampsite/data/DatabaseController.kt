@@ -65,4 +65,27 @@ class DatabaseController {
             .delete().await()
     }
 
+    suspend fun getrating(campsiteId: String, userId: String): Int? {
+        val doc = campsites.document(campsiteId)
+            .collection("ratings").document(userId)
+            .get().await()
+        return doc.getLong("rating")?.toInt()
+    }
+
+    suspend fun rateCampsite(campsiteId: String, userId: String, rating: Int): Double {
+        val campsiteRef = campsites.document(campsiteId)
+        val ratingsRef = campsiteRef.collection("ratings")
+
+        ratingsRef.document(userId)
+            .set(mapOf("userId" to userId, "rating" to rating, "ratedAt" to FieldValue.serverTimestamp()))
+            .await()
+
+        val all = ratingsRef.get().await().documents.mapNotNull { it.getLong("rating") }
+        val average = Math.round(all.average() * 10) / 10.0
+
+        campsiteRef.update("rating", average).await()
+        return average
+    }
+
+
 }

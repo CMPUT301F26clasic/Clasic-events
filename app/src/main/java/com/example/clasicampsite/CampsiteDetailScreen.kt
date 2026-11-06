@@ -1,6 +1,8 @@
 package com.example.clasicampsite
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -54,6 +56,10 @@ fun CampsiteDetailScreen(
     val userId = remember {
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
     }
+    var userrating by remember { mutableStateOf<Int?>(null) }
+    var showRating by remember { mutableStateOf<Double?>(null) }
+    var rating by remember { mutableStateOf(false) }
+    var ratingError by remember { mutableStateOf<String?>(null) }
 
 
 
@@ -65,8 +71,10 @@ fun CampsiteDetailScreen(
                 val fetched = dbController.getCampsite(campsiteId)
                 if (fetched != null) {
                     campsite = fetched
+                    showRating = fetched.rating
                     alreadyinLottery =
                         userId != null && dbController.isUserInLottery(campsiteId, userId)
+                    userrating = if( userId != null) dbController.getrating(campsiteId, userId) else null
                 }
                 else {
                     errorMessage = "Campsite not found."
@@ -219,6 +227,7 @@ fun CampsiteDetailScreen(
                     }
 
                     // 3. Max Occupancy & 4. Rating Row
+                    // 3. Max Occupancy & 4. Rating Row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -243,7 +252,7 @@ fun CampsiteDetailScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "★ ${site.rating} / 5.0",
+                                text = "★ ${showRating ?: site.rating} / 5.0",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.testTag("campsiteRating")
@@ -252,6 +261,46 @@ fun CampsiteDetailScreen(
                     }
                 }
             }
+
+            // Star picker, below the card
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = if (userrating == null) "Rate this campsite" else "Your rating",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                for (star in 1..5) {
+                    Text(
+                        text = if (star <= (userrating ?: 0)) "★" else "☆",
+                        fontSize = 36.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .testTag("star$star")
+                            .clickable(enabled = !rating) {
+                                scope.launch {
+                                    rating = true
+                                    ratingError = null
+                                    try {
+                                        showRating = dbController.rateCampsite(site.id, userId, star)
+                                        userrating = star
+                                    } catch (e: Exception) {
+                                        ratingError = "Rating failed: ${e.localizedMessage}"
+                                    } finally {
+                                        rating = false
+                                    }
+                                }
+                            }
+                    )
+                }
+            }
+
+            ratingError?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+            }
         }
     }
 }
+
