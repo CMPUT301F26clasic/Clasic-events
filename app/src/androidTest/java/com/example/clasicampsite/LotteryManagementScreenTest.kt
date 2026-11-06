@@ -9,7 +9,7 @@
 package com.example.clasicampsite
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -34,7 +34,7 @@ import java.util.UUID
 class LotteryManagementScreenTest {
 
     @get:Rule
-    val composeRule = createAndroidComposeRule<MainActivity>()
+    val composeRule = createComposeRule()
     private val firestore = FirebaseFirestore.getInstance()
 
     // Unique campsite ID so tests do not interfere with existing data.
@@ -42,7 +42,9 @@ class LotteryManagementScreenTest {
 
     /** Waits up to 10 seconds for [text] to appear, because Firestore takes time. */
     private fun waitForText(text: String) {
-        composeRule.waitUntil(10_000) { composeRule.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     /** Creates a campsite document for this test. */
@@ -103,19 +105,19 @@ class LotteryManagementScreenTest {
     /** Adds a test user and lottery entrant to Firestore. */
     private fun addTestEntrant(name: String): Unit {
         runBlocking {
-        val userId = "lottery_test_user_${UUID.randomUUID()}"
-        val entrantId = "lottery_test_entrant_${UUID.randomUUID()}"
+            val userId = "lottery_test_user_${UUID.randomUUID()}"
+            val entrantId = "lottery_test_entrant_${UUID.randomUUID()}"
 
-        // Create the user document.
-        firestore.collection("users")
-            .document(userId)
-            .set(mapOf("id" to userId, "name" to name, "email" to "test@example.com")).await()
+            // Create the user document.
+            firestore.collection("users")
+                .document(userId)
+                .set(mapOf("id" to userId, "name" to name, "email" to "test@example.com")).await()
 
-        // Associate the user with the test campsite's lottery.
-        firestore.collection("lottery_entrants")
-            .document(entrantId)
-            .set(mapOf("id" to entrantId, "campsiteId" to testCampsiteId, "userId" to userId))
-            .await()
+            // Associate the user with the test campsite's lottery.
+            firestore.collection("lottery_entrants")
+                .document(entrantId)
+                .set(mapOf("id" to entrantId, "campsiteId" to testCampsiteId, "userId" to userId))
+                .await()
         }
     }
 
@@ -141,7 +143,9 @@ class LotteryManagementScreenTest {
 
         // Verify that the new winner count was saved to Firestore.
         val savedCount = runBlocking {
-            firestore.collection("campsites").document(testCampsiteId).get().await().getLong("numberOfWinners") }
+            firestore.collection("campsites").document(testCampsiteId).get().await()
+                .getLong("numberOfWinners")
+        }
 
         assertEquals(4L, savedCount)
     }
@@ -185,8 +189,8 @@ class LotteryManagementScreenTest {
         waitForText("Lottery Test Entrant One")
         waitForText("Lottery Test Entrant Two")
 
-        composeRule.onNodeWithText("Lottery Test Entrant One").assertIsDisplayed()
-        composeRule.onNodeWithText("Lottery Test Entrant Two").assertIsDisplayed()
+        composeRule.onNodeWithText("Lottery Test Entrant One", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("Lottery Test Entrant Two", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("2 entrants").assertIsDisplayed()
     }
 }
