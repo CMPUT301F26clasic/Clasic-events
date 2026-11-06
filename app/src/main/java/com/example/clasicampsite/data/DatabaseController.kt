@@ -1,6 +1,7 @@
 /*
 Purpose: Saves, loads and deletes the app's data in Firebase Firestore. Each part of the app
 adds the functions for its own data here.
+Outstanding issues: Only users and campsites are handled so far.
  */
 package com.example.clasicampsite.data
 
@@ -21,6 +22,12 @@ class DatabaseController {
     suspend fun getUser(deviceId: String): User {
         val document = users.document(deviceId).get().await()
         return document.toObject(User::class.java) ?: User(id = deviceId)
+    }
+
+    /** Returns every saved user */
+    suspend fun getAllUsers(): List<User> {
+        val snapshot = users.get().await()
+        return snapshot.toObjects(User::class.java)
     }
 
     /** Saves [user], replacing what was saved before */
