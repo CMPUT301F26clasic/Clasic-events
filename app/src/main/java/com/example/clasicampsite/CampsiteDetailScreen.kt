@@ -257,6 +257,18 @@ fun CampsiteDetailScreen(
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.testTag("campsiteRating")
                             )
+
+                            // Manage Lottery Button
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+                                onClick = {
+                                    navController.navigate("manage_lottery/${site.id}")
+                                },
+                                modifier = Modifier.testTag("manageLotteryButton")
+                            ) {
+                                Text("Manage Lottery")
+                            }
                         }
                     }
                 }

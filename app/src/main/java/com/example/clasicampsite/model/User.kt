@@ -1,8 +1,7 @@
 /*
 Purpose: A person using the app, saved in the Firestore "users" collection under their
 device ID (US 01.09.01). Also checks that their details are valid (US 01.07.03).
-Outstanding issues: Profile picture and roles (entrant, owner, admin) are not added yet.
-*/
+Outstanding issues: Roles (entrant, owner, admin) are not added yet.*/
 package com.example.clasicampsite.model
 
 // The shape of a valid email: text@text.text, with one @ and no spaces.
@@ -14,6 +13,7 @@ private val EMAIL_FORMAT = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$") // made by cl
  * @property email Contact email
  * @property phone Phone number, optional
  * @property notificationsEnabled False if the user opted out of notifications
+ * @property profileImage Profile picture, shrunk and stored as Base64 text, or "" for none
  */
 data class User(
     var id: String = "",
@@ -21,6 +21,7 @@ data class User(
     var email: String = "",
     var phone: String = "",
     var notificationsEnabled: Boolean = true,
+    var profileImage: String = "",
 ) {
     /**
      * Checks the user's details (US 01.07.03).
