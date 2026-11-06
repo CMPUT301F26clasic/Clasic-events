@@ -17,9 +17,15 @@ fun clasiCampsiteApp() {
         composable("policy") { PolicyScreen(navController) }
         composable("campsite_detail") { CampsiteDetailScreen(navController) }
         composable("admin_profiles") { AdminProfilesScreen(navController) }
+        composable("register_campsite") { RegisterCampsiteScreen(navController) }
+
         composable("campsite_detail/{campsiteId}") { backStackEntry ->
             val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
             CampsiteDetailScreen(navController, campsiteId = campsiteId)
+        }
+        composable("manage_lottery/{campsiteId}") { backStackEntry ->
+            val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
+            LotteryManagementScreen(navController = navController, campsiteId = campsiteId)
         }
     }
 }
