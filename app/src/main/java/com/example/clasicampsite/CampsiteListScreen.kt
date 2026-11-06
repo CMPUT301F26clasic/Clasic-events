@@ -49,7 +49,7 @@ private val sampleCampsites = listOf(
     Campsite("craycray", "River Bend", "Hinton, AB", 2, 3.8, LocalDate.of(2027, 5, 1), LocalDate.of(2027, 7, 31))
 )
 
-private fun Campsite.matchesSearch(query: String): Boolean {
+internal fun Campsite.matchesSearch(query: String): Boolean {
     val q = query.trim()
     if (q.isEmpty()) return true
 
@@ -62,7 +62,7 @@ private fun Campsite.matchesSearch(query: String): Boolean {
     return matchesText || matchesOccupancy
 }
 
-private fun Campsite.matchesFilter(filter: CampsiteFilter): Boolean {
+internal fun Campsite.matchesFilter(filter: CampsiteFilter): Boolean {
     if (filter.location.isNotBlank() &&
         !location.contains(filter.location.trim(), ignoreCase = true)
     ) return false
