@@ -1,23 +1,29 @@
 /*
 Purpose: Saves, loads and deletes the app's data in Firebase Firestore. Each part of the app
 adds the functions for its own data here.
-Outstanding issues: Only users and campsites are handled so far.
+Outstanding issues: Booking checks that dates are still free right before saving, but two
+people booking at the exact same moment could still both succeed (needs a transaction).
  */
 package com.example.clasicampsite.data
 
 import com.example.clasicampsite.model.Campsite
+import com.example.clasicampsite.model.Lottery
+import com.example.clasicampsite.model.Reservation
 import com.example.clasicampsite.model.User
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import com.example.clasicampsite.model.LotteryEntrant
-import com.google.firebase.firestore.FieldValue
 
 /** Reads and writes app data in Firestore. */
 class DatabaseController {
 
     private val users = FirebaseFirestore.getInstance().collection("users")
     private val campsites = FirebaseFirestore.getInstance().collection("campsites")
+    private val lotteries = FirebaseFirestore.getInstance().collection("lotteries")
+    private val reservations = FirebaseFirestore.getInstance().collection("reservations")
+    private val notifications = FirebaseFirestore.getInstance().collection("notifications")
 
     private val lotteryEntrants = FirebaseFirestore.getInstance().collection("lottery_entrants")
 
@@ -111,6 +117,55 @@ class DatabaseController {
         )
 
         document.set(campsiteData).await()
+    }
+
+    /** Fetches the lottery with [lotteryId], or null if it doesn't exist */
+    suspend fun getLottery(lotteryId: String): Lottery? {
+        val document = lotteries.document(lotteryId).get().await()
+        return document.toObject(Lottery::class.java)?.apply { id = document.id }
+    }
+
+    /** Saves or updates [lottery] */
+    suspend fun saveLottery(lottery: Lottery) {
+        val docRef = if (lottery.id.isBlank()) lotteries.document() else lotteries.document(lottery.id)
+        lottery.id = docRef.id
+        docRef.set(lottery).await()
+    }
+
+    /** Records that [deviceId] declined the lottery with [lotteryId] (US 01.04.03) */
+    suspend fun declineLottery(lotteryId: String, deviceId: String) {
+        lotteries.document(lotteryId).update("declined", FieldValue.arrayUnion(deviceId)).await()
+    }
+
+    /** Fetches every reservation for the campsite with [campsiteId] */
+    suspend fun getReservationsForCampsite(campsiteId: String): List<Reservation> {
+        val snapshot = reservations.whereEqualTo("campsiteId", campsiteId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Reservation::class.java)?.apply { id = doc.id }
+        }
+    }
+
+    /** Fetches the reservation with [reservationId], or null if it doesn't exist */
+    suspend fun getReservation(reservationId: String): Reservation? {
+        val document = reservations.document(reservationId).get().await()
+        return document.toObject(Reservation::class.java)?.apply { id = document.id }
+    }
+
+    /** Saves a new [reservation] and gives it an ID (US 01.04.02) */
+    suspend fun saveReservation(reservation: Reservation) {
+        val docRef = if (reservation.id.isBlank()) reservations.document() else reservations.document(reservation.id)
+        reservation.id = docRef.id
+        docRef.set(reservation).await()
+    }
+
+    /** Sends [message] to the user with [deviceId] as an in-app notification (US 01.05.01) */
+    suspend fun sendNotification(deviceId: String, message: String) {
+        val notification = hashMapOf(
+            "userId" to deviceId,
+            "message" to message,
+            "sentAt" to System.currentTimeMillis(),
+        )
+        notifications.add(notification).await()
     }
 
     /** Fetches all entrants for a specific campsite lottery */

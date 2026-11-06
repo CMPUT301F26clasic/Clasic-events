@@ -23,6 +23,14 @@ fun clasiCampsiteApp() {
             val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
             CampsiteDetailScreen(navController, campsiteId = campsiteId)
         }
+        composable("available_dates/{lotteryId}") { backStackEntry ->
+            val lotteryId = backStackEntry.arguments?.getString("lotteryId") ?: ""
+            AvailableDatesScreen(navController, lotteryId = lotteryId)
+        }
+        composable("reservation_confirmation/{reservationId}") { backStackEntry ->
+            val reservationId = backStackEntry.arguments?.getString("reservationId") ?: ""
+            ReservationConfirmationScreen(navController, reservationId = reservationId)
+        }
         composable("manage_lottery/{campsiteId}") { backStackEntry ->
             val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
             LotteryManagementScreen(navController = navController, campsiteId = campsiteId)
