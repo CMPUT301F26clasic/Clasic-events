@@ -20,20 +20,22 @@ import java.time.LocalDate
  * @property rating Average rating (e.g., 0.0 to 5.0)
  * @property availableFrom Start date of availability
  * @property availableTo End date of availability
+ * @property numberOfWinners How many entrants the lottery picks
  */
 data class Campsite(
     var id: String = "",
-    var ownerId: String = "",
     var name: String = "",
     var location: String = "",
-    var description: String = "",
     var maxOccupancy: Int = 0,
-    var pricePerNight: Double = 0.0,
-    var tags: List<String> = emptyList(),
     var rating: Double = 0.0,
     val availableFrom: LocalDate = LocalDate.of(1970, 1, 1),
     val availableTo: LocalDate = LocalDate.of(1970, 1, 1),
-    var numberOfWinners: Int = 0
+    var numberOfWinners: Int = 0,
+    // Owner fields (US 02.01.02) go last so code that builds a Campsite by position still works.
+    var ownerId: String = "",
+    var description: String = "",
+    var pricePerNight: Double = 0.0,
+    var tags: List<String> = emptyList()
 )
 
 data class CampsiteFilter(
