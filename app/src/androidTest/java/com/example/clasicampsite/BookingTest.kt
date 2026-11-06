@@ -1,7 +1,7 @@
 /*
 Purpose: Intent tests for booking a campsite after winning a lottery: seeing available dates
-(US 01.04.01), picking a campsite and dates and reserving them (US 01.04.02), and declining
-(US 01.04.03).
+(US 01.04.01), picking a campsite and dates (US 01.04.02), declining (US 01.04.03), and getting
+the confirmation with a CSV download (US 01.05.01, US 01.05.02).
 Outstanding issues: Uses the real Firestore database, so it needs internet. It saves a test
 lottery and deletes its test reservations before each test.
 */
@@ -26,7 +26,6 @@ import com.example.clasicampsite.model.Lottery
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -72,6 +71,10 @@ class BookingTest {
             val navController = rememberNavController()
             NavHost(navController = navController, startDestination = "dates") {
                 composable("dates") { AvailableDatesScreen(navController, lotteryId = testLotteryId) }
+                composable("reservation_confirmation/{reservationId}") { backStackEntry ->
+                    val reservationId = backStackEntry.arguments?.getString("reservationId") ?: ""
+                    ReservationConfirmationScreen(navController, reservationId = reservationId)
+                }
             }
         }
         waitFor("date_2099-07-01")
@@ -107,14 +110,14 @@ class BookingTest {
     }
 
     @Test
-    fun reservingBooksTheDates() {
+    fun reservingShowsConfirmationWithCsvDownload() {
         openScreen()
         composeRule.onNodeWithTag("date_2099-07-01").performClick()
         composeRule.onNodeWithTag("reserveButton").performClick()
 
-        waitFor("reservedMessage")
-        composeRule.onNodeWithTag("reservedMessage").assertIsDisplayed()
-        assertTrue(composeRule.onAllNodesWithTag("date_2099-07-01").fetchSemanticsNodes().isEmpty())
+        waitFor("confirmedTitle")
+        composeRule.onNodeWithTag("confirmedTitle").assertIsDisplayed()
+        composeRule.onNodeWithTag("downloadCsvButton").assertIsDisplayed()
     }
 
     @Test

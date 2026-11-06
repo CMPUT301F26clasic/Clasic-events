@@ -27,6 +27,13 @@ data class Reservation(
     /** Returns the number of nights reserved */
     fun nights(): Int = dates.size
 
+    /** Returns this reservation as CSV text with a header row (US 01.05.02) */
+    fun toCsv(): String {
+        val header = "Reservation ID,Campsite,Dates,Nights,Status"
+        val row = "$id,\"$campsiteName\",${dates.sorted().joinToString(" ")},${nights()},$status"
+        return header + "\n" + row + "\n"
+    }
+
     companion object {
         /** Returns every date taken by an active reservation in [reservations] */
         fun bookedDates(reservations: List<Reservation>): List<String> =

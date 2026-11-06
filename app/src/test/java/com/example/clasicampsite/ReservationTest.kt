@@ -1,4 +1,4 @@
-// Purpose: Unit tests for Reservation: nights and booked dates.
+// Purpose: Unit tests for Reservation: nights, booked dates and the CSV download.
 
 package com.example.clasicampsite
 
@@ -46,5 +46,13 @@ class ReservationTest {
     @Test
     fun noReservationsMeansNoBookedDates() {
         assertTrue(Reservation.bookedDates(emptyList()).isEmpty())
+    }
+
+    @Test
+    fun csvHasAHeaderAndOneRow() {
+        val lines = reservation.toCsv().trim().lines()
+        assertEquals(2, lines.size)
+        assertEquals("Reservation ID,Campsite,Dates,Nights,Status", lines[0])
+        assertEquals("res-1,\"Grande Cache Ridge\",2027-05-07 2027-05-08,2,active", lines[1])
     }
 }

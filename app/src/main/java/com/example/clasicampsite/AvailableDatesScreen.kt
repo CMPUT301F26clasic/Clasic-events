@@ -1,6 +1,6 @@
 /*
 Purpose: Lets a lottery winner see the dates they can book (US 01.04.01), choose a campsite and
-dates when the lottery has more than one campsite (US 01.04.02) and reserve them, or decline the
+dates when the lottery has more than one campsite (US 01.04.02), reserve them, or decline the
 reservation (US 01.04.03).
 Outstanding issues: Dates are shown as a list, not a calendar.
 */
@@ -72,7 +72,6 @@ fun AvailableDatesScreen(
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var bookingMessage by remember { mutableStateOf("") }
-    var reservedMessage by remember { mutableStateOf("") }
     var showDeclineDialog by remember { mutableStateOf(false) }
 
     // Load the lottery and the names of its campsites when the screen opens
@@ -201,7 +200,6 @@ fun AvailableDatesScreen(
                             try {
                                 isSaving = true
                                 bookingMessage = ""
-                                reservedMessage = ""
                                 // Check again in case someone booked these dates while we were looking
                                 val latestBooked = Reservation.bookedDates(
                                     dbController.getReservationsForCampsite(selectedCampsiteId)
@@ -219,9 +217,11 @@ fun AvailableDatesScreen(
                                         dates = selectedDates.sorted(),
                                     )
                                     dbController.saveReservation(reservation)
-                                    bookedDates = bookedDates + reservation.dates
-                                    selectedDates = emptyList()
-                                    reservedMessage = "Reserved ${reservation.nights()} night(s) at ${reservation.campsiteName}."
+                                    dbController.sendNotification(
+                                        deviceId,
+                                        "Your reservation at ${reservation.campsiteName} is confirmed for ${reservation.dates.joinToString(", ")}."
+                                    )
+                                    navController.navigate("reservation_confirmation/${reservation.id}")
                                 }
                             } catch (e: Exception) {
                                 bookingMessage = "Failed to reserve: ${e.localizedMessage}"
@@ -243,9 +243,6 @@ fun AvailableDatesScreen(
                     Text("Decline")
                 }
 
-                if (reservedMessage.isNotBlank()) {
-                    Text(reservedMessage, modifier = Modifier.testTag("reservedMessage"))
-                }
                 if (bookingMessage.isNotBlank()) {
                     Text(bookingMessage, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("bookingMessage"))
                 }

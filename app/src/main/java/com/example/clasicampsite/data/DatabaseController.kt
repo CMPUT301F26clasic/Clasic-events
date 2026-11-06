@@ -21,6 +21,7 @@ class DatabaseController {
     private val campsites = FirebaseFirestore.getInstance().collection("campsites")
     private val lotteries = FirebaseFirestore.getInstance().collection("lotteries")
     private val reservations = FirebaseFirestore.getInstance().collection("reservations")
+    private val notifications = FirebaseFirestore.getInstance().collection("notifications")
 
     /** Returns user saved under [deviceId], or a new empty user if none is saved yet */
     suspend fun getUser(deviceId: String): User {
@@ -91,10 +92,26 @@ class DatabaseController {
         }
     }
 
+    /** Fetches the reservation with [reservationId], or null if it doesn't exist */
+    suspend fun getReservation(reservationId: String): Reservation? {
+        val document = reservations.document(reservationId).get().await()
+        return document.toObject(Reservation::class.java)?.apply { id = document.id }
+    }
+
     /** Saves a new [reservation] and gives it an ID (US 01.04.02) */
     suspend fun saveReservation(reservation: Reservation) {
         val docRef = if (reservation.id.isBlank()) reservations.document() else reservations.document(reservation.id)
         reservation.id = docRef.id
         docRef.set(reservation).await()
+    }
+
+    /** Sends [message] to the user with [deviceId] as an in-app notification (US 01.05.01) */
+    suspend fun sendNotification(deviceId: String, message: String) {
+        val notification = hashMapOf(
+            "userId" to deviceId,
+            "message" to message,
+            "sentAt" to System.currentTimeMillis(),
+        )
+        notifications.add(notification).await()
     }
 }
