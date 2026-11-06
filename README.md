@@ -1,9 +1,7 @@
 # Clasic-events (clasiCampsite)
 
 ## Project Description
-**Clasic-events** is an Android app for reserving popular campsites in Alberta through a fair, lottery-based system. Instead of refreshing a booking page the moment spots open, entrants join a campsite's waiting list during a registration period. When it closes, the app randomly draws winners, who can then choose their dates and reserve, or decline so the spot goes to someone else.
-
-This gives people with busy schedules, disabilities, or other limitations the same chance at a booking as everyone else.
+**Clasic-events** **Clasic-events** is an Android application designed to facilitate event registration through a lottery-based system. The application aims to provide users with a fair and accessible way to register for events, while allowing organizers to manage events and participant selection.
 
 ## Features
 **Entrants**
