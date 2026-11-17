@@ -22,14 +22,14 @@
 
 ## Team Members
 
-| Name | GitHub Username | Main Area (Part 3) |
-| :--- | :--- | :--- |
-| Emery Theroux | [emery-collab](https://github.com/emery-collab) | Owner lotteries |
-| Evan Rosenblood | [EvanRosenblood](https://github.com/EvanRosenblood) | Setup, profile, admin profiles |
-| Keya Modi | [Keya_M](https://github.com/KeyaModi) | Lottery engine, waitlist, notifications |
-| Dhavanil Patel | [dhavanilp](https://github.com/dhavanilp) | Finding campsites, admin campsites |
-| Manush Patel | [Manush10](https://github.com/Manush10) | Booking and reservations |
-| Steve Thomas | [SteveThomas3269](https://github.com/SteveThomas3269) | Owner campsites (register, view/edit, My Campsites) |
+| Name | CCID | GitHub Username | Main Area (Part 3) | 
+| :--- | :--- | :--- | :--- |
+| Emery Theroux |x| [emery-collab](https://github.com/emery-collab) | Owner lotteries | 
+| Evan Rosenblood |x| [EvanRosenblood](https://github.com/EvanRosenblood) | Setup, profile, admin profiles |
+| Keya Modi |x| [Keya_M](https://github.com/KeyaModi) | Lottery engine, waitlist, notifications |
+| Dhavanil Patel |x| [dhavanilp](https://github.com/dhavanilp) | Finding campsites, admin campsites |
+| Manush Patel |x| [Manush10](https://github.com/Manush10) | Booking and reservations |
+| Steve Thomas |x| [SteveThomas3269](https://github.com/SteveThomas3269) | Owner campsites (register, view/edit, My Campsites) |
 
 ## Project Documentation
 These documents cover the design, planning, and structure of Clasic-events.
