@@ -1,4 +1,5 @@
 //Purpose: Intent tests for the admin profiles screen (US 03.05.01, US 03.02.01).
+//The tests make this emulator an admin first, since only admins see the admin buttons (US 03.11.01).
 
 package com.example.clasicampsite
 
@@ -7,6 +8,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -15,6 +17,10 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.tasks.await
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,6 +43,13 @@ class AdminProfilesScreenTest {
     private fun deviceId(): String =
         Settings.Secure.getString(composeRule.activity.contentResolver, Settings.Secure.ANDROID_ID)
 
+    /** Marks this emulator's user as an admin in Firestore, keeping its other fields. */
+    private fun makeThisDeviceAdmin() = runBlocking {
+        FirebaseFirestore.getInstance().collection("users").document(deviceId())
+            .set(mapOf("admin" to true), SetOptions.merge()).await()
+        Unit
+    }
+
     /** Saves a profile called [name] through the Profile screen, then goes back Home. */
     private fun saveProfile(name: String) {
         composeRule.onNodeWithTag("profileButton").performClick()
@@ -51,11 +64,20 @@ class AdminProfilesScreenTest {
         composeRule.onNodeWithTag("backButton").performClick()
     }
 
+    /** Waits for Home to show the admin button, then opens the admin profiles screen. */
+    private fun openAdminProfiles() {
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithTag("adminProfilesButton").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("adminProfilesButton").performClick()
+    }
+
     /** US 03.05.01: the admin list shows saved profiles. */
     @Test
     fun browseShowsSavedProfile() {
+        makeThisDeviceAdmin()
         saveProfile("Admin Test User")
-        composeRule.onNodeWithTag("adminProfilesButton").performClick()
+        openAdminProfiles()
         waitForText("Admin Test User")
         // The list holds every profile, so scroll to this device's one first
         composeRule.onNodeWithTag("profileList").performScrollToNode(hasText("Device ID: ${deviceId()}"))
@@ -65,8 +87,9 @@ class AdminProfilesScreenTest {
     /** US 03.02.01: removing asks first, then takes the profile off the list. */
     @Test
     fun removeAsksFirstThenRemovesProfile() {
+        makeThisDeviceAdmin()
         saveProfile("Remove Me")
-        composeRule.onNodeWithTag("adminProfilesButton").performClick()
+        openAdminProfiles()
         waitForText("Remove Me")
         composeRule.onNodeWithTag("profileList").performScrollToNode(hasTestTag("removeButton_${deviceId()}"))
         composeRule.onNodeWithTag("removeButton_${deviceId()}").performClick()
