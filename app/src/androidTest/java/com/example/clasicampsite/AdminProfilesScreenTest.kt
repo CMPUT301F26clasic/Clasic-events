@@ -24,6 +24,8 @@ import kotlinx.coroutines.tasks.await
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import com.example.clasicampsite.model.User
+import org.junit.Assert.assertFalse
 
 /** Tests the admin profiles screen by using the app. */
 @RunWith(AndroidJUnit4::class)
@@ -97,5 +99,44 @@ class AdminProfilesScreenTest {
         composeRule.onNodeWithTag("confirmRemoveButton").performClick()
         waitForText("Profile removed")
         composeRule.onNodeWithText("Remove Me").assertDoesNotExist()
+    }
+
+    /** US 03.07.01: removing a campsite owner also removes their campsites. */
+    @Test
+    fun removeOwnerAlsoRemovesTheirCampsites() {
+        makeThisDeviceAdmin()
+        val database = FirebaseFirestore.getInstance()
+        runBlocking {
+            database.collection("users").document("admin_test_owner").set(
+                User(id = "admin_test_owner", name = "Owner To Remove", email = "owner.test@ualberta.ca")
+            ).await()
+            database.collection("campsites").document("admin_test_owner_campsite").set(
+                mapOf(
+                    "name" to "Owner Test Campsite",
+                    "ownerId" to "admin_test_owner",
+                    "availableFrom" to "2027-05-01",
+                    "availableTo" to "2027-09-30",
+                )
+            ).await()
+        }
+        // Leave Home and come back so it checks admin again
+        composeRule.onNodeWithTag("profileButton").performClick()
+        composeRule.onNodeWithTag("backButton").performClick()
+        openAdminProfiles()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithTag("profileList").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("profileList").performScrollToNode(hasTestTag("removeButton_admin_test_owner"))
+        composeRule.onNodeWithTag("removeButton_admin_test_owner").performClick()
+        composeRule.onNodeWithText(
+            "This deletes this user's profile and the 1 campsite(s) they own. It can't be undone."
+        ).assertIsDisplayed()
+        composeRule.onNodeWithTag("confirmRemoveButton").performClick()
+        waitForText("Profile removed")
+
+        val campsite = runBlocking {
+            database.collection("campsites").document("admin_test_owner_campsite").get().await()
+        }
+        assertFalse(campsite.exists())
     }
 }
