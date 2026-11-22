@@ -31,6 +31,11 @@ class UserTest {
     }
 
     @Test
+    fun newUserIsNotAdmin() {
+        assertEquals(false, User().admin)
+    }
+
+    @Test
     fun blankNameIsAnError() {
         assertEquals("Name is required", validUser.copy(name = "").errorMessage())
         assertEquals("Name is required", validUser.copy(name = "   ").errorMessage())

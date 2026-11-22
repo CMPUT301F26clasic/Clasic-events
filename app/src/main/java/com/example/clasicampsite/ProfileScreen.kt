@@ -43,6 +43,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 
 /** Turns picture saved as Base64 text back into an image, or null if there is none. */
 fun decodePicture(text: String): ImageBitmap? {
@@ -79,7 +82,37 @@ fun ProfileScreen(navController: NavController) {
         }
         Text("Profile", fontSize = 24.sp)
         Text("Device ID: ${viewModel.deviceId}")
-
+        // NEW: admins can switch between seeing the app as an admin or as a regular user
+        if (viewModel.admin) {
+            Text("Admin", modifier = Modifier.testTag("adminLabel"))
+            var menuOpen by remember { mutableStateOf(false) }
+            Box {
+                Button(
+                    onClick = { menuOpen = true },
+                    modifier = Modifier.testTag("viewAsButton"),
+                ) {
+                    Text(if (AdminAccess.viewAsUser) "View as: User" else "View as: Admin")
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text("Admin") },
+                        onClick = {
+                            AdminAccess.viewAsUser = false
+                            menuOpen = false
+                        },
+                        modifier = Modifier.testTag("viewAsAdminOption"),
+                    )
+                    DropdownMenuItem(
+                        text = { Text("User") },
+                        onClick = {
+                            AdminAccess.viewAsUser = true
+                            menuOpen = false
+                        },
+                        modifier = Modifier.testTag("viewAsUserOption"),
+                    )
+                }
+            }
+        }
         if (!viewModel.loaded) {
             Text("Loading...")
         } else {

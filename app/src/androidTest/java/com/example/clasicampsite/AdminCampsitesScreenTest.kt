@@ -1,7 +1,9 @@
 //Purpose: Intent tests for the admin campsites screen (admin browses every campsite).
+//The tests make this emulator an admin first, since only admins see the admin buttons (US 03.11.01).
 
 package com.example.clasicampsite
 
+import android.provider.Settings
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -14,6 +16,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.clasicampsite.data.DatabaseController
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.junit.After
@@ -32,7 +35,7 @@ class AdminCampsitesScreenTest {
     private val testId = "admin_test_campsite"
     private val testName = "Admin Test Campsite"
 
-    /** Saves a known campsite in Firestore. */
+    /** Saves a known campsite in Firestore and makes this emulator an admin. */
     @Before
     fun addTestCampsite() = runBlocking {
         FirebaseFirestore.getInstance().collection("campsites").document(testId).set(
@@ -45,6 +48,11 @@ class AdminCampsitesScreenTest {
                 "availableTo" to "2027-09-30",
             )
         ).await()
+        val deviceId = Settings.Secure.getString(
+            composeRule.activity.contentResolver, Settings.Secure.ANDROID_ID
+        )
+        FirebaseFirestore.getInstance().collection("users").document(deviceId)
+            .set(mapOf("admin" to true), SetOptions.merge()).await()
         Unit
     }
 
@@ -63,6 +71,12 @@ class AdminCampsitesScreenTest {
 
     /** Opens the admin campsites screen from Home and waits for the list to load. */
     private fun openAdminCampsites() {
+        // Leave Home and come back so it checks admin again, then wait for the admin button.
+        composeRule.onNodeWithTag("profileButton").performClick()
+        composeRule.onNodeWithTag("backButton").performClick()
+        composeRule.waitUntil(10_000) {
+            composeRule.onAllNodesWithTag("adminCampsitesButton").fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithTag("adminCampsitesButton").performClick()
         waitForText("All campsites")
         composeRule.waitUntil(10_000) {
