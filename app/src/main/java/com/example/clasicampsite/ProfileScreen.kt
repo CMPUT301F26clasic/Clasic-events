@@ -1,6 +1,7 @@
 /*
 Purpose: The user's profile screen: shows their device ID, lets them edit their
 name, email, phone, turn notifications off, open the app policy, and delete their profile.
+Admins can also switch to viewing the app as a regular user.
  */
 package com.example.clasicampsite
 
