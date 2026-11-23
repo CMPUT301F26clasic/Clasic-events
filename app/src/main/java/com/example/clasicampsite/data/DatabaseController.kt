@@ -53,6 +53,19 @@ class DatabaseController {
         users.document(deviceId).delete().await()
     }
 
+    /** Deletes every campsite owned by [ownerId] (US 03.07.01) */
+    suspend fun deleteCampsitesByOwner(ownerId: String) {
+        val snapshot = campsites.whereEqualTo("ownerId", ownerId).get().await()
+        for (document in snapshot.documents) {
+            document.reference.delete().await()
+        }
+    }
+
+    /** Removes the profile picture of the user saved under [deviceId], keeping their profile (US 03.03.01) */
+    suspend fun removeProfileImage(deviceId: String) {
+        users.document(deviceId).update("profileImage", "").await()
+    }
+
     /** Fetches a single campsite by its [campsiteId] from Firestore */
     suspend fun getCampsite(campsiteId: String): Campsite? {
         val document = campsites.document(campsiteId).get().await()

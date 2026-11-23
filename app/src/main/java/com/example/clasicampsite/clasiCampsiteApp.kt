@@ -24,6 +24,7 @@ fun clasiCampsiteApp() {
         }
         composable("admin_profiles") { AdminProfilesScreen(navController) }
         composable("admin_campsites") {AdminCampsitesScreen(navController)}
+        composable("admin_images") { AdminImagesScreen(navController) }
         composable("register_campsite") { RegisterCampsiteScreen(navController) }
 
         composable("campsite_detail/{campsiteId}") { backStackEntry ->

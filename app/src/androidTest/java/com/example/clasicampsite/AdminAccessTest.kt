@@ -54,6 +54,7 @@ class AdminAccessTest {
         }
         composeRule.onNodeWithTag("adminProfilesButton").assertIsDisplayed()
         composeRule.onNodeWithTag("adminCampsitesButton").assertIsDisplayed()
+        composeRule.onNodeWithTag("adminImagesButton").assertIsDisplayed()
         composeRule.onNodeWithTag("myCampsitesButton").assertIsDisplayed()
         composeRule.onNodeWithTag("campsiteButton").assertIsDisplayed()
     }
@@ -66,9 +67,9 @@ class AdminAccessTest {
         Thread.sleep(3_000) // give Home time to finish checking with Firestore
         composeRule.onNodeWithTag("adminProfilesButton").assertDoesNotExist()
         composeRule.onNodeWithTag("adminCampsitesButton").assertDoesNotExist()
+        composeRule.onNodeWithTag("adminImagesButton").assertDoesNotExist()
         setAdmin(true) // put this emulator back to admin for the other tests
     }
-
 
     /** An admin who picks "View as: User" on Profile doesn't see the admin buttons. */
     @Test

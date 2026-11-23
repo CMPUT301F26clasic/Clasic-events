@@ -1,6 +1,7 @@
 /*
 Purpose: The admin screen that lists every profile and lets the admin remove one after confirming
-Only admins can use it; everyone else sees "Admins only" (US 03.11.01).
+Only admins can use it; everyone else sees "Admins only" (US 03.11.01). Shows how many campsites
+each user owns. Removing a user also removes those (US 03.07.01).
 Outstanding issues: None.
  */
 package com.example.clasicampsite
@@ -93,6 +94,7 @@ fun AdminProfilesScreen(navController: NavController) {
                             Text("Email: ${user.email}")
                             Text("Phone: ${user.phone}")
                             Text("Device ID: ${user.id}")
+                            Text("Campsites owned: ${viewModel.campsiteCounts[user.id] ?: 0}")
                             Button(
                                 onClick = { userToRemove = user },
                                 modifier = Modifier.testTag("removeButton_${user.id}"),
@@ -111,7 +113,10 @@ fun AdminProfilesScreen(navController: NavController) {
         AlertDialog(
             onDismissRequest = { userToRemove = null },
             title = { Text("Remove profile?") },
-            text = { Text("This deletes this user's profile. It can't be undone.") },
+            text = {
+                val owned = viewModel.campsiteCounts[user.id] ?: 0
+                Text("This deletes this user's profile and the $owned campsite(s) they own. It can't be undone.")
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
