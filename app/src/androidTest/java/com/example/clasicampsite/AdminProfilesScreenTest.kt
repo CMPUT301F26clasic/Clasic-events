@@ -1,4 +1,4 @@
-//Purpose: Intent tests for the admin profiles screen (US 03.05.01, US 03.02.01).
+//Purpose: Intent tests for the admin profiles screen (US 03.05.01, US 03.02.01, US 03.07.01).
 //The tests make this emulator an admin first, since only admins see the admin buttons (US 03.11.01).
 
 package com.example.clasicampsite

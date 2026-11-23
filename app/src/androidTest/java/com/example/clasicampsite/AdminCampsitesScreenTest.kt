@@ -1,4 +1,4 @@
-//Purpose: Intent tests for the admin campsites screen (admin browses every campsite).
+//Purpose: Intent tests for the admin campsites screen (US 03.04.01: admin browses every campsite).
 //The tests make this emulator an admin first, since only admins see the admin buttons (US 03.11.01).
 
 package com.example.clasicampsite
@@ -86,14 +86,14 @@ class AdminCampsitesScreenTest {
         composeRule.onNodeWithTag("adminCampsiteList").performScrollToNode(hasText(testName))
     }
 
-    /** Home button opens admin campsites screen. */
+    /** US 03.04.01: Home button opens admin campsites screen. */
     @Test
     fun homeButtonOpensAdminCampsites() {
         openAdminCampsites()
         composeRule.onNodeWithText("All campsites").assertIsDisplayed()
     }
 
-    /** The list shows a saved campsite with its details. */
+    /** US 03.04.01: The list shows a saved campsite with its details. */
     @Test
     fun browseShowsSavedCampsite() {
         openAdminCampsites()
@@ -105,7 +105,7 @@ class AdminCampsitesScreenTest {
         composeRule.onNode(card and hasText("Available: 2027-05-01 to 2027-09-30")).assertExists()
     }
 
-    /** Back button to return Home. */
+    /** US 03.04.01: Back button to return Home. */
     @Test
     fun backButtonReturnsHome() {
         openAdminCampsites()
@@ -114,7 +114,7 @@ class AdminCampsitesScreenTest {
         composeRule.onNodeWithText("clasiCampsite Home").assertIsDisplayed()
     }
 
-    /** May fail until getCampsite() reads dates safely. */
+    /** US 03.04.01: tapping a campsite opens its details. May fail until getCampsite() reads dates safely. */
     @Test
     fun tappingCampsiteOpensDetails() {
         openAdminCampsites()

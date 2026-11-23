@@ -1,6 +1,6 @@
 /*
 Purpose: The user's profile screen: shows their device ID, lets them edit their
-name, email, phone, turn notifications off, open the app policy, and delete their profile.
+name, email, phone, turn notifications off, turn on color blind mode, open the app policy, and delete their profile.
 Admins can also switch to viewing the app as a regular user.
  */
 package com.example.clasicampsite
@@ -165,15 +165,19 @@ fun ProfileScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth().testTag("phoneField"),
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = { viewModel.save() },
-                    modifier = Modifier.fillMaxWidth().testTag("saveButton"),
-                ) {
-                    Text("Update info")
-                }
+            // color blind mode changes the colors right away, and is saved with Update info
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Switch(
+                    checked = ColorBlindMode.enabled,
+                    onCheckedChange = { ColorBlindMode.enabled = it },
+                    modifier = Modifier.testTag("colorBlindSwitch"),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Colour blind mode")
             }
-            Text(viewModel.message)
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -193,6 +197,17 @@ fun ProfileScreen(navController: NavController) {
                     Text("View App Policy and Guidelines")
                 }
             }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { viewModel.save() },
+                    modifier = Modifier.fillMaxWidth().testTag("saveButton"),
+                ) {
+                    Text("Update info")
+                }
+            }
+            Text(viewModel.message)
+
             Button(
                 onClick = { showDeleteDialog = true },
                 modifier = Modifier.testTag("deleteButton"),

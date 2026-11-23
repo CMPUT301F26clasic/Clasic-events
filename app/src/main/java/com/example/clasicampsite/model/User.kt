@@ -17,6 +17,7 @@ private val EMAIL_FORMAT = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$") // made by cl
  * @property notificationsEnabled False if the user opted out of notifications
  * @property profileImage Profile picture, shrunk and stored as Base64 text, or "" for none
  * @property admin True if this user is an admin. Only set by hand in Firebase (US 03.11.01)
+ * @property colorBlindMode True if the user turned on color blind mode
  */
 data class User(
     var id: String = "",
@@ -26,6 +27,7 @@ data class User(
     var notificationsEnabled: Boolean = true,
     var profileImage: String = "",
     var admin: Boolean = false,
+    var colorBlindMode: Boolean = false,
 ) {
     /**
      * Checks the user's details (US 01.07.03).

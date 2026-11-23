@@ -71,7 +71,7 @@ class AdminAccessTest {
         setAdmin(true) // put this emulator back to admin for the other tests
     }
 
-    /** An admin who picks "View as: User" on Profile doesn't see the admin buttons. */
+    /** US 03.11.01: an admin who picks "View as: User" on Profile doesn't see the admin buttons. */
     @Test
     fun adminViewingAsUserDoesNotSeeAdminButtons() {
         setAdmin(true)
