@@ -1,6 +1,6 @@
 /*
 Purpose: Holds what Profile screen shows and talks to database. Loads user for
-this device, saves their details and notification setting and deletes their profile
+this device, saves their details, notification and color blind settings and deletes their profile
 Outstanding issues: None.
  */
 package com.example.clasicampsite
@@ -53,6 +53,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 notificationsEnabled = user.notificationsEnabled
                 profileImage = user.profileImage
                 admin = user.admin
+                ColorBlindMode.enabled = user.colorBlindMode
             } catch (e: Exception) {
                 message = "Couldn't load your profile"
             }
@@ -70,6 +71,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             notificationsEnabled = notificationsEnabled,
             profileImage = profileImage,
             admin = admin,
+            colorBlindMode = ColorBlindMode.enabled,
         )
         val error = user.errorMessage()
         if (error != null) {
