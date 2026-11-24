@@ -1,10 +1,12 @@
 /*
  * File: OwnerCampsiteScreenTest.kt
- * Purpose: Intent tests for the owner's campsite screens: register (US 02.01.01, US 02.01.02),
- *          view and update (US 02.01.03, US 02.01.04), and My Campsites (US 02.03.01).
+ * Purpose: Intent tests for the owner's campsite screens: register with an optional map
+ *          location (US 02.01.01, US 02.01.02), view and update (US 02.01.03, US 02.01.04),
+ *          and My Campsites (US 02.03.01).
  * Outstanding issues: Uses the real Firestore database, so it needs internet. Each test
  *                     deletes this phone's campsites named in TEST_NAMES before and after
- *                     it runs, so don't use those names for real campsites.
+ *                     it runs, so don't use those names for real campsites. Picking a photo
+ *                     isn't tested, because Android's photo picker is outside the app.
  * Parts of this file were written with help from Claude (Anthropic), 2026-11-03, updated 2026-11-24
  */
 package com.example.clasicampsite
@@ -112,8 +114,11 @@ class OwnerCampsiteScreenTest {
         composeRule.onNodeWithTag("myCampsitesTitle").assertIsDisplayed()
     }
 
-    /** Fills in and submits the register form with a campsite called [name] at [location]. */
-    private fun registerCampsite(name: String, location: String) {
+    /**
+     * Fills in and submits the register form with a campsite called [name] at [location].
+     * [latitude] and [longitude] are optional and left blank if not given.
+     */
+    private fun registerCampsite(name: String, location: String, latitude: String = "", longitude: String = "") {
         composeRule.onNodeWithTag("registerCampsiteButton").performClick()
         type("campsiteNameField", name)
         type("campsiteLocationField", location)
@@ -121,6 +126,10 @@ class OwnerCampsiteScreenTest {
         type("campsiteOccupancyField", "6")
         type("campsitePriceField", "45")
         type("campsiteTagsField", "lake, fire pit, boating")
+        if (latitude.isNotEmpty()) {
+            type("campsiteLatitudeField", latitude)
+            type("campsiteLongitudeField", longitude)
+        }
         composeRule.onNodeWithTag("saveCampsiteButton").performScrollTo().performClick()
         // Saving goes back to My Campsites; wait for it before checking the list.
         waitForTag("myCampsitesTitle")
@@ -152,7 +161,7 @@ class OwnerCampsiteScreenTest {
         type("campsiteOccupancyField", "8")
         type("campsitePriceField", "65")
         composeRule.onNodeWithTag("saveCampsiteButton").performScrollTo().performClick()
-        composeRule.onNodeWithText("Name is required").assertIsDisplayed()
+        composeRule.onNodeWithText("Name is required").performScrollTo().assertIsDisplayed()
     }
 
     /** US 02.01.03, US 02.01.04: an owner can view their campsite, edit it and save. */
@@ -172,12 +181,25 @@ class OwnerCampsiteScreenTest {
         composeRule.onNodeWithTag("saveCampsiteButton").performScrollTo().performClick()
         waitForText("Campsite updated")
     }
+    /** US 02.01.02: a map location the owner types is saved and shown with the campsite. */
+    @Test
+    fun mapLocationIsSavedWithCampsite() {
+        openMyCampsites()
+        registerCampsite(MAP_NAME, "Waterton Park, AB", "49.05", "-113.91")
+        scrollToCampsite(MAP_NAME)
 
+        composeRule.onNodeWithText(MAP_NAME).performClick()
+        waitForTag("editCampsiteButton")
+        composeRule.onNodeWithTag("campsiteLatitudeField").performScrollTo().assertTextContains("49.05")
+        composeRule.onNodeWithTag("campsiteLongitudeField").assertTextContains("-113.91")
+        composeRule.onNodeWithTag("viewOnMapButton").performScrollTo().assertIsDisplayed()
+    }
     private companion object {
         /** Realistic campsite names the tests register, then delete. */
         const val REGISTER_NAME = "Pigeon Lake Retreat"
         const val EDIT_NAME = "Sylvan Lake Pines"
-        val TEST_NAMES = listOf(REGISTER_NAME, EDIT_NAME)
+        const val MAP_NAME = "Waterton Shoreline Camp"
+        val TEST_NAMES = listOf(REGISTER_NAME, EDIT_NAME, MAP_NAME)
 
         /** Name starts used by older versions of these tests. */
         val OLD_PREFIXES = listOf("Test Site ", "Edit Site ")

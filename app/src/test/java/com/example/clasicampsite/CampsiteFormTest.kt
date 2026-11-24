@@ -1,6 +1,9 @@
-// Purpose: Unit tests for CampsiteForm's checks and conversion (US 02.01.01 - US 02.01.03).
-// Parts of the test file were written with help from Claude (anthropic), 2026-11-3
-
+/*
+ * Purpose: Unit tests for CampsiteForm's checks and conversion, including the promo
+ * picture and map location (US 02.01.01 - US 02.01.03).
+ * Outstanding issues: None known.
+ * Parts of this file were written with help from Claude (Anthropic), 2026-11-03, updated 2026-11-24
+ */
 package com.example.clasicampsite
 
 import com.example.clasicampsite.model.Campsite
@@ -23,6 +26,7 @@ class CampsiteFormTest {
 
     private val occupancyError = "Max occupancy must be a whole number of at least 1"
     private val priceError = "Price must be a number of 0 or more"
+    private val mapError = "Latitude must be -90 to 90 and longitude -180 to 180"
 
     @Test
     fun validFormHasNoError() {
@@ -97,5 +101,38 @@ class CampsiteFormTest {
     fun priceIsFormattedWithoutTrailingZeros() {
         assertEquals("65", CampsiteForm.formatPrice(65.0))
         assertEquals("65.50", CampsiteForm.formatPrice(65.5))
+    }
+
+    @Test
+    fun mapLocationAndImageAreOptional() {
+        assertNull(validForm.errorMessage())
+        assertNull(validForm.mapLocation())
+        assertNull(validForm.applyTo(Campsite()).latitude)
+        assertEquals("", validForm.applyTo(Campsite()).image)
+    }
+
+    @Test
+    fun validMapLocationIsRead() {
+        val form = validForm.copy(latitude = " 53.40 ", longitude = "-117.58")
+        assertNull(form.errorMessage())
+        assertEquals(Pair(53.4, -117.58), form.mapLocation())
+    }
+
+    @Test
+    fun badMapLocationIsAnError() {
+        assertEquals(mapError, validForm.copy(latitude = "95", longitude = "10").errorMessage())
+        assertEquals(mapError, validForm.copy(latitude = "53", longitude = "-200").errorMessage())
+        assertEquals(mapError, validForm.copy(latitude = "53.4", longitude = "").errorMessage())
+        assertEquals(mapError, validForm.copy(latitude = "north", longitude = "west").errorMessage())
+    }
+
+    @Test
+    fun fromThenApplyToKeepsImageAndMapLocation() {
+        val campsite = Campsite(
+            id = "abc", ownerId = "device-1", name = "Lakeview", location = "Jasper, AB",
+            maxOccupancy = 4, pricePerNight = 42.5,
+            image = "aW1hZ2U=", latitude = 52.87, longitude = -118.08,
+        )
+        assertEquals(campsite, CampsiteForm.from(campsite).applyTo(campsite))
     }
 }
