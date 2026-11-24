@@ -175,6 +175,14 @@ class DatabaseController {
         return document.toObject(Reservation::class.java)?.apply { id = document.id }
     }
 
+    /** Fetches every reservation made by the user with [userId] (US 01.06.01, US 01.06.02) */
+    suspend fun getReservationsForUser(userId: String): List<Reservation> {
+        val snapshot = reservations.whereEqualTo("userId", userId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Reservation::class.java)?.apply { id = doc.id }
+        }
+    }
+
     /** Saves a new [reservation] and gives it an ID (US 01.04.02) */
     suspend fun saveReservation(reservation: Reservation) {
         val docRef = if (reservation.id.isBlank()) reservations.document() else reservations.document(reservation.id)
