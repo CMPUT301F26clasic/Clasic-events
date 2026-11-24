@@ -1,4 +1,5 @@
-// Purpose: Unit tests for User's validation (US 01.07.03).
+// Purpose: Unit tests for User's validation (US 01.07.03) and its default settings
+// (US 01.10.01, US 03.11.01, colour blind mode WOW factor).
 
 package com.example.clasicampsite
 
@@ -28,6 +29,16 @@ class UserTest {
     @Test
     fun newUserHasNotificationsOn() {
         assertEquals(true, User().notificationsEnabled)
+    }
+
+    @Test
+    fun newUserIsNotAdmin() {
+        assertEquals(false, User().admin)
+    }
+
+    @Test
+    fun newUserHasColorBlindModeOff() {
+        assertEquals(false, User().colorBlindMode)
     }
 
     @Test

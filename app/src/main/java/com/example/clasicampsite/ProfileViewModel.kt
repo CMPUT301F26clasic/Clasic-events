@@ -1,6 +1,7 @@
 /*
 Purpose: Holds what Profile screen shows and talks to database. Loads user for
-this device, saves their details and notification setting and deletes their profile
+this device, saves their details, notification and color blind settings and deletes their profile
+Outstanding issues: None.
  */
 package com.example.clasicampsite
 
@@ -38,6 +39,10 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     var message by mutableStateOf("")
     var loaded by mutableStateOf(false)
 
+    // Whether this user is an admin. Only shown, never edited here (set in Firebase).
+    var admin by mutableStateOf(false)
+        private set
+
     init {
         viewModelScope.launch {
             try {
@@ -47,6 +52,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 phone = user.phone
                 notificationsEnabled = user.notificationsEnabled
                 profileImage = user.profileImage
+                admin = user.admin
+                ColorBlindMode.enabled = user.colorBlindMode
             } catch (e: Exception) {
                 message = "Couldn't load your profile"
             }
@@ -63,6 +70,8 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             phone = phone.trim(),
             notificationsEnabled = notificationsEnabled,
             profileImage = profileImage,
+            admin = admin,
+            colorBlindMode = ColorBlindMode.enabled,
         )
         val error = user.errorMessage()
         if (error != null) {

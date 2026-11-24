@@ -1,5 +1,6 @@
 /*
 Purpose: Holds admin's list of every profile and removes profiles that break the app policy.
+Also knows how many campsites each user owns, and removing a user removes those too (US 03.07.01).
 Outstanding issues: Removing a profile does not yet remove that user's waiting list entries or
 reservations.
  */
@@ -20,6 +21,7 @@ class AdminProfilesViewModel : ViewModel() {
     private val database = DatabaseController()
 
     var users by mutableStateOf(listOf<User>())
+    var campsiteCounts by mutableStateOf(mapOf<String, Int>()) // owner's device ID -> how many campsites they own
     var message by mutableStateOf("")
     var loaded by mutableStateOf(false)
 
@@ -27,6 +29,7 @@ class AdminProfilesViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 users = database.getAllUsers()
+                campsiteCounts = database.getAllCampsites().groupingBy { it.ownerId }.eachCount()
             } catch (e: Exception) {
                 message = "Couldn't load profiles"
             }
@@ -34,10 +37,11 @@ class AdminProfilesViewModel : ViewModel() {
         }
     }
 
-    /** Deletes [user]'s profile and takes it off the list */
+    /** Deletes [user]'s profile and every campsite they own, then takes them off the list */
     fun remove(user: User) {
         viewModelScope.launch {
             try {
+                database.deleteCampsitesByOwner(user.id)
                 database.deleteUser(user.id)
                 users = users.filter { it.id != user.id }
                 message = "Profile removed"

@@ -1,7 +1,7 @@
 /*
 Purpose: The admin screen that lists every campsite. Tapping one opens its details.
-Outstanding issues: Anyone can open this screen from Home for now. It should only show for
-admins once roles are added.
+Only admins can use it; everyone else sees "Admins only" (US 03.11.01).
+Outstanding issues: None.
  */
 package com.example.clasicampsite
 
@@ -18,7 +18,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,6 +34,17 @@ import androidx.navigation.NavController
 /** The admin's list of every campsite. */
 @Composable
 fun AdminCampsitesScreen(navController: NavController) {
+    // only admins can see this screen. null = still checking with Firestore.
+    val context = LocalContext.current
+    var allowed by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(Unit) {
+        allowed = AdminAccess.isAdmin(context)
+    }
+    if (allowed != true) {
+        AdminOnlyMessage(navController, checking = allowed == null)
+        return
+    }
+
     val viewModel: AdminCampsitesViewModel = viewModel()
 
     Column(

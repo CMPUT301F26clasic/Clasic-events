@@ -9,3 +9,11 @@ val Pink80 = Color(0xFFEFB8C8)
 val Purple40 = Color(0xFF6650a4)
 val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
+
+// color blind safe colors. Uses blue and orange instead of
+// red and green, which are the colors most color blind people mix up.
+val ColorBlindBlue = Color(0xFF0072B2)
+val ColorBlindSkyBlue = Color(0xFF56B4E9)
+val ColorBlindOrange = Color(0xFFE69F00)
+val ColorBlindYellow = Color(0xFFF0E442)
+val ColorBlindVermillion = Color(0xFFD55E00)
