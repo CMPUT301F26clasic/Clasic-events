@@ -29,7 +29,7 @@ class DatabaseController {
     private val reservations = FirebaseFirestore.getInstance().collection("reservations")
     private val notifications = FirebaseFirestore.getInstance().collection("notifications")
 
-    private val lotteryEntrants = FirebaseFirestore.getInstance().collection("lottery_entrants")
+
 
     /** Returns user saved under [deviceId], or a new empty user if none is saved yet */
     suspend fun getUser(deviceId: String): User {
@@ -51,6 +51,19 @@ class DatabaseController {
     /** Deletes the user saved under [deviceId] */
     suspend fun deleteUser(deviceId: String) {
         users.document(deviceId).delete().await()
+    }
+
+    /** Deletes every campsite owned by [ownerId] (US 03.07.01) */
+    suspend fun deleteCampsitesByOwner(ownerId: String) {
+        val snapshot = campsites.whereEqualTo("ownerId", ownerId).get().await()
+        for (document in snapshot.documents) {
+            document.reference.delete().await()
+        }
+    }
+
+    /** Removes the profile picture of the user saved under [deviceId], keeping their profile (US 03.03.01) */
+    suspend fun removeProfileImage(deviceId: String) {
+        users.document(deviceId).update("profileImage", "").await()
     }
 
     /** Fetches a single campsite by its [campsiteId] from Firestore */
@@ -187,22 +200,20 @@ class DatabaseController {
 
     /** Fetches all entrants for a specific campsite lottery */
     suspend fun getLotteryEntrants(campsiteId: String): List<LotteryEntrant> {
-        val snapshot = lotteryEntrants.whereEqualTo("campsiteId", campsiteId).get().await()
-        return snapshot.documents.mapNotNull { doc ->
-            doc.toObject(LotteryEntrant::class.java)?.apply { id = doc.id }
+        val snapshot = campsites.document(campsiteId).collection("lottery").get().await()
+
+        return snapshot.documents.map { doc ->
+            LotteryEntrant(id = doc.id, campsiteId = campsiteId, userId = doc.getString("userId") ?: doc.id)
         }
     }
 
-    /** Saves a lottery entrant */
+    /** Saves a lottery entrant under the campsite's lottery subcollection */
     suspend fun saveLotteryEntrant(entrant: LotteryEntrant) {
-        val docRef = if (entrant.id.isBlank()) {
-            lotteryEntrants.document()
-        } else {
-            lotteryEntrants.document(entrant.id)
-        }
+        val docRef = campsites.document(entrant.campsiteId).collection("lottery").document(entrant.userId)
+
+        docRef.set(mapOf("userId" to entrant.userId, "joinedAt" to FieldValue.serverTimestamp())).await()
 
         entrant.id = docRef.id
-        docRef.set(entrant).await()
     }
 
     /** Updates the number of winners for a campsite lottery */
@@ -263,10 +274,7 @@ class DatabaseController {
             .get().await().exists()
 
     suspend fun joinLottery(campsiteId: String, userId: String) {
-        campsites.document(campsiteId)
-            .collection("lottery").document(userId)
-            .set(mapOf("userId" to userId, "joinedAt" to FieldValue.serverTimestamp()))
-            .await()
+        saveLotteryEntrant(LotteryEntrant(campsiteId = campsiteId, userId = userId))
     }
 
     suspend fun leaveLottery(campsiteId: String, userId: String) {
