@@ -14,6 +14,9 @@ package com.example.clasicampsite.model
  * @property maxOccupancy Whole number of guests, 1 or more
  * @property pricePerNight Dollars per night, 0 or more
  * @property tags Comma-separated tags, optional
+ * @property image Promo picture as Base64 text, or "" for none (optional)
+ * @property latitude Map latitude as text, -90 to 90 (optional)
+ * @property longitude Map longitude as text, -180 to 180 (optional)
  */
 data class CampsiteForm(
     val name: String = "",
@@ -22,6 +25,9 @@ data class CampsiteForm(
     val maxOccupancy: String = "",
     val pricePerNight: String = "",
     val tags: String = "",
+    val image: String = "",
+    val latitude: String = "",
+    val longitude: String = "",
 ) {
 
     /**
@@ -35,7 +41,22 @@ data class CampsiteForm(
         if (guests == null || guests < 1) return "Max occupancy must be a whole number of at least 1"
         val price = pricePerNight.trim().removePrefix("$").toDoubleOrNull()
         if (price == null || price < 0) return "Price must be a number of 0 or more"
+        val mapTyped = latitude.isNotBlank() || longitude.isNotBlank()
+        if (mapTyped && mapLocation() == null) {
+            return "Latitude must be -90 to 90 and longitude -180 to 180"
+        }
         return null
+    }
+
+    /**
+     * Reads the map boxes.
+     * @return (latitude, longitude), or null if either box is empty or out of range
+     */
+    fun mapLocation(): Pair<Double, Double>? {
+        val lat = latitude.trim().toDoubleOrNull() ?: return null
+        val lng = longitude.trim().toDoubleOrNull() ?: return null
+        if (lat !in -90.0..90.0 || lng !in -180.0..180.0) return null
+        return Pair(lat, lng)
     }
 
     /** Turns "lake, pets, lake" into [lake, pets] - trims spaces and drops blanks/repeats. */
@@ -54,6 +75,9 @@ data class CampsiteForm(
         maxOccupancy = maxOccupancy.trim().toInt(),
         pricePerNight = pricePerNight.trim().removePrefix("$").toDouble(),
         tags = tagList(),
+        image = image,
+        latitude = mapLocation()?.first,
+        longitude = mapLocation()?.second,
     )
 
     companion object {
@@ -65,6 +89,9 @@ data class CampsiteForm(
             maxOccupancy = campsite.maxOccupancy.toString(),
             pricePerNight = formatPrice(campsite.pricePerNight),
             tags = campsite.tags.joinToString(", "),
+            image = campsite.image,
+            latitude = campsite.latitude?.toString() ?: "",
+            longitude = campsite.longitude?.toString() ?: "",
         )
 
         /** Makes prices look normal: 65.0 shows as "65", 65.5 as "65.50". */
