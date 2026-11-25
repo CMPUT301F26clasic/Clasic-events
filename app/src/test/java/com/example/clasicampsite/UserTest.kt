@@ -37,8 +37,8 @@ class UserTest {
     }
 
     @Test
-    fun newUserHasColorBlindModeOff() {
-        assertEquals(false, User().colorBlindMode)
+    fun newUserHasRegularColorMode() {
+        assertEquals("regular", User().colorMode)
     }
 
     @Test
