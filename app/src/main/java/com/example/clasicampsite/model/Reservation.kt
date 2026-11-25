@@ -57,6 +57,14 @@ data class Reservation(
     fun canCancel(today: String): Boolean = isUpcoming(today)
 
     /**
+     * Returns the message sent to the user after they cancel this reservation (US 01.07.02).
+     *
+     * @return a sentence naming the campsite and the cancelled dates
+     */
+    fun cancellationMessage(): String =
+        "Your reservation at $campsiteName for ${dates.sorted().joinToString(", ")} was cancelled."
+
+    /**
      * Returns this reservation as CSV text with a header row (US 01.05.02).
      *
      * @return the CSV text: a header line, then one line for this reservation

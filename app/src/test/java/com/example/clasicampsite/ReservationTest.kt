@@ -1,7 +1,8 @@
 /**
  * Purpose: Unit tests for Reservation: nights and booked dates (US 01.04.01, US 01.04.02),
  * the CSV download (US 01.05.02), and splitting reservations into active and past
- * (US 01.06.01, US 01.06.02), and which reservations can be cancelled (US 01.07.01).
+ * (US 01.06.01, US 01.06.02), which reservations can be cancelled (US 01.07.01), and the
+ * cancellation confirmation message and CSV (US 01.07.02).
  * Outstanding issues: None.
  */
 
@@ -132,5 +133,22 @@ class ReservationTest {
     fun cancelledReservationCannotBeCancelledAgain() {
         val cancelled = reservation.copy(status = "cancelled")
         assertFalse(cancelled.canCancel("2027-05-01"))
+    }
+
+    /** US 01.07.02: the cancellation message names the campsite and the cancelled dates */
+    @Test
+    fun cancellationMessageNamesCampsiteAndDates() {
+        val cancelled = reservation.copy(status = "cancelled")
+        assertEquals(
+            "Your reservation at Grande Cache Ridge for 2027-05-07, 2027-05-08 was cancelled.",
+            cancelled.cancellationMessage(),
+        )
+    }
+
+    /** US 01.07.02: the CSV of a cancelled reservation shows the cancelled status */
+    @Test
+    fun cancelledReservationCsvShowsCancelledStatus() {
+        val lines = reservation.copy(status = "cancelled").toCsv().trim().lines()
+        assertEquals("res-1,\"Grande Cache Ridge\",2027-05-07 2027-05-08,2,cancelled", lines[1])
     }
 }

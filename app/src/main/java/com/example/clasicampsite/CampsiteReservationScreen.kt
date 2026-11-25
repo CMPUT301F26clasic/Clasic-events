@@ -2,12 +2,17 @@
  * Purpose: Shows the entrant's reservations, split into active ones that are still coming up
  * (US 01.06.01) and past ones that are over, cancelled or rejected (US 01.06.02). Tapping an
  * active reservation opens its confirmation, and active reservations can be cancelled (US 01.07.01).
+ * After cancelling, the user gets a notification and can download the cancellation as a CSV
+ * file (US 01.07.02).
  * Outstanding issues: The "My Lottery Win" button still opens the test lottery. It should be
- * replaced once the automatic draw (US 02.05.01) can send winners to their lottery. There is no
- * cancellation confirmation by notification or CSV yet (US 01.07.02).
+ * replaced once the automatic draw (US 02.05.01) can send winners to their lottery. The
+ * cancellation notification is sent even if the user turned notifications off.
  */
 package com.example.clasicampsite
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -52,7 +57,9 @@ import java.util.Locale
  * under Active (still coming up, US 01.06.01) and Past (over, cancelled or rejected,
  * US 01.06.02). Tapping an active reservation opens its confirmation. Active reservations have
  * a Cancel button, which asks first because cancelling can't be undone, then updates the list
- * so the reservation moves to Past right away (US 01.07.01). Until the automatic draw is done,
+ * so the reservation moves to Past right away (US 01.07.01). After cancelling, a notification is
+ * sent and a button lets the user save the cancellation as a CSV file (US 01.07.02). Until the
+ * automatic draw is done,
  * the My Lottery Win button opens the test lottery so a winner can book.
  *
  * @param navController used to go back and to open other screens
@@ -73,6 +80,23 @@ fun CampSiteReservationScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var cancelMessage by remember { mutableStateOf("") }
     var reservationToCancel by remember { mutableStateOf<Reservation?>(null) }
+    var cancelledReservation by remember { mutableStateOf<Reservation?>(null) }
+
+    val csvLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri ->
+        val cancelled = cancelledReservation
+        if (uri != null && cancelled != null) {
+            try {
+                context.contentResolver.openOutputStream(uri)?.use { stream ->
+                    stream.write(cancelled.toCsv().toByteArray())
+                }
+                Toast.makeText(context, "Cancellation saved as CSV", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Could not save the CSV", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     LaunchedEffect(deviceId) {
         try {
@@ -108,6 +132,16 @@ fun CampSiteReservationScreen(
 
         if (cancelMessage.isNotBlank()) {
             Text(cancelMessage, modifier = Modifier.testTag("cancelMessage"))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+        val cancelled = cancelledReservation
+        if (cancelled != null) {
+            OutlinedButton(
+                onClick = { csvLauncher.launch("cancellation-${cancelled.id}.csv") },
+                modifier = Modifier.fillMaxWidth().testTag("downloadCancelCsvButton")
+            ) {
+                Text("Download cancellation as CSV")
+            }
             Spacer(modifier = Modifier.height(8.dp))
         }
 
@@ -162,10 +196,17 @@ fun CampSiteReservationScreen(
                         coroutineScope.launch {
                             try {
                                 dbController.cancelReservation(toCancel.id)
+                                val nowCancelled = toCancel.copy(status = "cancelled")
                                 reservations = reservations.map {
-                                    if (it.id == toCancel.id) it.copy(status = "cancelled") else it
+                                    if (it.id == toCancel.id) nowCancelled else it
                                 }
-                                cancelMessage = "Your reservation at ${toCancel.campsiteName} was cancelled."
+                                cancelledReservation = nowCancelled
+                                cancelMessage = try {
+                                    dbController.sendNotification(deviceId, nowCancelled.cancellationMessage())
+                                    nowCancelled.cancellationMessage() + " A confirmation was sent to your notifications."
+                                } catch (e: Exception) {
+                                    nowCancelled.cancellationMessage() + " The notification could not be sent."
+                                }
                             } catch (e: Exception) {
                                 cancelMessage = "Failed to cancel: ${e.localizedMessage}"
                             }

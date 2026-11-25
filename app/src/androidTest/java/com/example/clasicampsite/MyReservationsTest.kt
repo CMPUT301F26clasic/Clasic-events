@@ -1,6 +1,7 @@
 /**
  * Purpose: Intent tests for the My Reservations screen: seeing active reservations (US 01.06.01),
- * past reservations (US 01.06.02), and cancelling a reservation (US 01.07.01).
+ * past reservations (US 01.06.02), cancelling a reservation (US 01.07.01), and getting the
+ * cancellation confirmation by notification and CSV (US 01.07.02).
  * Outstanding issues: Uses the real Firestore database, so it needs internet. It saves two test
  * reservations for this device before each test and deletes them afterwards.
  */
@@ -26,6 +27,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -168,5 +170,29 @@ class MyReservationsTest {
 
         val saved = runBlocking { DatabaseController().getReservation(upcomingId) }
         assertEquals("cancelled", saved?.status)
+    }
+
+    /**
+     * US 01.07.02: after cancelling, a cancellation notification is saved for this device and a
+     * button to download the cancellation as a CSV file is shown. The test notification is
+     * deleted at the end.
+     */
+    @Test
+    fun cancellingSendsNotificationAndOffersCsv() {
+        openScreen()
+        scrollTo(upcomingId)
+        composeRule.onNodeWithTag("cancelButton_$upcomingId").performClick()
+        composeRule.onNodeWithTag("confirmCancelButton").performClick()
+
+        waitFor("downloadCancelCsvButton")
+        composeRule.onNodeWithTag("downloadCancelCsvButton").assertIsDisplayed()
+
+        val message = "Your reservation at Two Jack Lakeside for 2099-08-01, 2099-08-02 was cancelled."
+        val notifications = FirebaseFirestore.getInstance().collection("notifications")
+        val sent = runBlocking {
+            notifications.whereEqualTo("userId", deviceId).whereEqualTo("message", message).get().await()
+        }
+        assertTrue(sent.documents.isNotEmpty())
+        runBlocking { sent.documents.forEach { it.reference.delete().await() } }
     }
 }
