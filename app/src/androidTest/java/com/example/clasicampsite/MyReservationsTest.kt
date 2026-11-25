@@ -1,9 +1,9 @@
-/*
-Purpose: Intent tests for the My Reservations screen: seeing active reservations (US 01.06.01)
-and past reservations (US 01.06.02).
-Outstanding issues: Uses the real Firestore database, so it needs internet. It saves two test
-reservations for this device before each test and deletes them afterwards.
-*/
+/**
+ * Purpose: Intent tests for the My Reservations screen: seeing active reservations (US 01.06.01),
+ * past reservations (US 01.06.02), and cancelling a reservation (US 01.07.01).
+ * Outstanding issues: Uses the real Firestore database, so it needs internet. It saves two test
+ * reservations for this device before each test and deletes them afterwards.
+ */
 package com.example.clasicampsite
 
 import android.provider.Settings
@@ -25,6 +25,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -34,12 +35,17 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MyReservationsTest {
 
+    /** Runs the Compose screens for these tests */
     @get:Rule
     val composeRule = createComposeRule()
 
+    /** ID of the test reservation whose nights are still coming up */
     private val upcomingId = "ui-test-res-upcoming"
+
+    /** ID of the test reservation whose nights are already over */
     private val finishedId = "ui-test-res-finished"
 
+    /** This emulator's device ID, which the app uses as the user ID */
     private val deviceId: String = Settings.Secure.getString(
         InstrumentationRegistry.getInstrumentation().targetContext.contentResolver,
         Settings.Secure.ANDROID_ID
@@ -95,13 +101,22 @@ class MyReservationsTest {
         waitFor("reservationsList")
     }
 
+    /**
+     * Waits up to 15 seconds for a node to appear, because Firestore takes time to load.
+     *
+     * @param tag the test tag of the node to wait for
+     */
     private fun waitFor(tag: String) {
         composeRule.waitUntil(15_000) {
             composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
         }
     }
 
-    /** Scrolls the list to the reservation with [id], since this device may have others too */
+    /**
+     * Scrolls the list to one reservation, since this device may have other reservations too.
+     *
+     * @param id the ID of the reservation to scroll to
+     */
     private fun scrollTo(id: String) {
         composeRule.onNodeWithTag("reservationsList").performScrollToNode(hasTestTag("reservation_$id"))
     }
@@ -134,5 +149,24 @@ class MyReservationsTest {
 
         waitFor("confirmedTitle")
         composeRule.onNodeWithTag("confirmedTitle").assertIsDisplayed()
+    }
+
+    /**
+     * US 01.07.01: cancelling asks first, then saves the reservation as cancelled. A cancelled
+     * reservation can't be cancelled again, so its Cancel button should be gone.
+     */
+    @Test
+    fun cancellingAReservationSavesItAsCancelled() {
+        openScreen()
+        scrollTo(upcomingId)
+        composeRule.onNodeWithTag("cancelButton_$upcomingId").performClick()
+        composeRule.onNodeWithTag("confirmCancelButton").performClick()
+
+        waitFor("cancelMessage")
+        composeRule.onNodeWithTag("cancelMessage").assertIsDisplayed()
+        composeRule.onNodeWithTag("cancelButton_$upcomingId").assertDoesNotExist()
+
+        val saved = runBlocking { DatabaseController().getReservation(upcomingId) }
+        assertEquals("cancelled", saved?.status)
     }
 }

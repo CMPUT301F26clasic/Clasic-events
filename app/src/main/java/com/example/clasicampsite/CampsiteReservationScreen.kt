@@ -1,10 +1,11 @@
-/*
-Purpose: Shows the entrant's reservations, split into active ones that are still coming up
-(US 01.06.01) and past ones that are over, cancelled or rejected (US 01.06.02). Tapping an
-active reservation opens its confirmation.
-Outstanding issues: The "My Lottery Win" button still opens the test lottery. It should be
-replaced once the automatic draw (US 02.05.01) can send winners to their lottery.
-*/
+/**
+ * Purpose: Shows the entrant's reservations, split into active ones that are still coming up
+ * (US 01.06.01) and past ones that are over, cancelled or rejected (US 01.06.02). Tapping an
+ * active reservation opens its confirmation, and active reservations can be cancelled (US 01.07.01).
+ * Outstanding issues: The "My Lottery Win" button still opens the test lottery. It should be
+ * replaced once the automatic draw (US 02.05.01) can send winners to their lottery. There is no
+ * cancellation confirmation by notification or CSV yet (US 01.07.02).
+ */
 package com.example.clasicampsite
 
 import androidx.compose.foundation.clickable
@@ -17,17 +18,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -38,13 +42,21 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Reservation
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * The My Reservations screen. Lists this device's reservations under Active and Past
- * (US 01.06.01, US 01.06.02).
+ * The My Reservations screen. When it opens it loads this device's reservations and lists them
+ * under Active (still coming up, US 01.06.01) and Past (over, cancelled or rejected,
+ * US 01.06.02). Tapping an active reservation opens its confirmation. Active reservations have
+ * a Cancel button, which asks first because cancelling can't be undone, then updates the list
+ * so the reservation moves to Past right away (US 01.07.01). Until the automatic draw is done,
+ * the My Lottery Win button opens the test lottery so a winner can book.
+ *
+ * @param navController used to go back and to open other screens
+ * @param dbController reads and writes reservations in Firestore
  */
 @Composable
 fun CampSiteReservationScreen(
@@ -54,12 +66,14 @@ fun CampSiteReservationScreen(
     val context = LocalContext.current
     val deviceId = AdminAccess.deviceId(context)
     val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+    val coroutineScope = rememberCoroutineScope()
 
     var reservations by remember { mutableStateOf<List<Reservation>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var cancelMessage by remember { mutableStateOf("") }
+    var reservationToCancel by remember { mutableStateOf<Reservation?>(null) }
 
-    // Load this user's reservations when the screen opens
     LaunchedEffect(deviceId) {
         try {
             reservations = dbController.getReservationsForUser(deviceId)
@@ -84,7 +98,6 @@ fun CampSiteReservationScreen(
         Text("My Reservations", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Until the automatic draw is done, this opens the test lottery so a winner can book
         OutlinedButton(
             onClick = { navController.navigate("available_dates/test-lottery") },
             modifier = Modifier.fillMaxWidth().testTag("availableDatesButton")
@@ -93,13 +106,17 @@ fun CampSiteReservationScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
+        if (cancelMessage.isNotBlank()) {
+            Text(cancelMessage, modifier = Modifier.testTag("cancelMessage"))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         if (isLoading) {
             CircularProgressIndicator()
         } else if (errorMessage != null) {
             Text(errorMessage ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("errorText"))
         } else {
             LazyColumn(modifier = Modifier.weight(1f).testTag("reservationsList")) {
-                // US 01.06.01: reservations that are still coming up
                 item {
                     Text("Active", fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("activeHeader"))
                 }
@@ -107,12 +124,17 @@ fun CampSiteReservationScreen(
                     item { Text("No active reservations.", modifier = Modifier.testTag("noActiveText")) }
                 }
                 items(active) { reservation ->
-                    ReservationCard(reservation) {
-                        navController.navigate("reservation_confirmation/${reservation.id}")
-                    }
+                    ReservationCard(
+                        reservation,
+                        onClick = { navController.navigate("reservation_confirmation/${reservation.id}") },
+                        onCancel = if (reservation.canCancel(today)) {
+                            { reservationToCancel = reservation }
+                        } else {
+                            null
+                        },
+                    )
                 }
 
-                // US 01.06.02: reservations that are over, cancelled or rejected
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text("Past", fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.testTag("pastHeader"))
@@ -121,19 +143,57 @@ fun CampSiteReservationScreen(
                     item { Text("No past reservations.", modifier = Modifier.testTag("noPastText")) }
                 }
                 items(past) { reservation ->
-                    ReservationCard(reservation, onClick = null)
+                    ReservationCard(reservation, onClick = null, onCancel = null)
                 }
             }
         }
+    }
+
+    val toCancel = reservationToCancel
+    if (toCancel != null) {
+        AlertDialog(
+            onDismissRequest = { reservationToCancel = null },
+            title = { Text("Cancel this reservation?") },
+            text = { Text("Your nights at ${toCancel.campsiteName} will be given up. This can't be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        reservationToCancel = null
+                        coroutineScope.launch {
+                            try {
+                                dbController.cancelReservation(toCancel.id)
+                                reservations = reservations.map {
+                                    if (it.id == toCancel.id) it.copy(status = "cancelled") else it
+                                }
+                                cancelMessage = "Your reservation at ${toCancel.campsiteName} was cancelled."
+                            } catch (e: Exception) {
+                                cancelMessage = "Failed to cancel: ${e.localizedMessage}"
+                            }
+                        }
+                    },
+                    modifier = Modifier.testTag("confirmCancelButton")
+                ) {
+                    Text("Cancel reservation")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { reservationToCancel = null }) {
+                    Text("Keep it")
+                }
+            }
+        )
     }
 }
 
 /**
  * One reservation in the list, showing the campsite, dates, nights and status.
- * [onClick] is null for past reservations, so they can't be tapped.
+ *
+ * @param reservation the reservation to show
+ * @param onClick called when the card is tapped, or null so past reservations can't be tapped
+ * @param onCancel called when Cancel is tapped, or null to hide the Cancel button
  */
 @Composable
-private fun ReservationCard(reservation: Reservation, onClick: (() -> Unit)?) {
+private fun ReservationCard(reservation: Reservation, onClick: (() -> Unit)?, onCancel: (() -> Unit)?) {
     val tapModifier = if (onClick != null) Modifier.clickable { onClick() } else Modifier
     Card(
         modifier = Modifier
@@ -147,6 +207,15 @@ private fun ReservationCard(reservation: Reservation, onClick: (() -> Unit)?) {
             Text("Dates: ${reservation.dates.sorted().joinToString(", ")}")
             Text("Nights: ${reservation.nights()}")
             Text("Status: ${reservation.status}")
+            if (onCancel != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onCancel,
+                    modifier = Modifier.testTag("cancelButton_${reservation.id}")
+                ) {
+                    Text("Cancel")
+                }
+            }
         }
     }
 }

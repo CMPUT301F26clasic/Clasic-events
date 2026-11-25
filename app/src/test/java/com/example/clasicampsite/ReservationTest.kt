@@ -1,17 +1,22 @@
-// Purpose: Unit tests for Reservation: nights and booked dates (US 01.04.01, US 01.04.02),
-// the CSV download (US 01.05.02), and splitting reservations into active and past
-// (US 01.06.01, US 01.06.02).
-// Outstanding issues: None.
+/**
+ * Purpose: Unit tests for Reservation: nights and booked dates (US 01.04.01, US 01.04.02),
+ * the CSV download (US 01.05.02), and splitting reservations into active and past
+ * (US 01.06.01, US 01.06.02), and which reservations can be cancelled (US 01.07.01).
+ * Outstanding issues: None.
+ */
 
 package com.example.clasicampsite
 
 import com.example.clasicampsite.model.Reservation
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/** Unit tests for the Reservation model class. */
 class ReservationTest {
 
+    /** A two-night reservation used by most of the tests */
     private val reservation = Reservation(
         id = "res-1",
         lotteryId = "test-lottery",
@@ -108,5 +113,24 @@ class ReservationTest {
         val older = Reservation(id = "res-6", campsiteName = "Lake Louise Campground", dates = listOf("2026-08-14"))
         val past = Reservation.pastReservations(listOf(older, reservation), "2027-09-01")
         assertEquals(listOf("res-1", "res-6"), past.map { it.id })
+    }
+
+    /** US 01.07.01: an active reservation that hasn't happened yet can be cancelled */
+    @Test
+    fun upcomingReservationCanBeCancelled() {
+        assertTrue(reservation.canCancel("2027-05-01"))
+    }
+
+    /** US 01.07.01: a reservation that has already ended can't be cancelled */
+    @Test
+    fun finishedReservationCannotBeCancelled() {
+        assertFalse(reservation.canCancel("2027-06-01"))
+    }
+
+    /** US 01.07.01: a reservation that is already cancelled can't be cancelled again */
+    @Test
+    fun cancelledReservationCannotBeCancelledAgain() {
+        val cancelled = reservation.copy(status = "cancelled")
+        assertFalse(cancelled.canCancel("2027-05-01"))
     }
 }
