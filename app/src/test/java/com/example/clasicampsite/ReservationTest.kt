@@ -151,4 +151,22 @@ class ReservationTest {
         val lines = reservation.copy(status = "cancelled").toCsv().trim().lines()
         assertEquals("res-1,\"Grande Cache Ridge\",2027-05-07 2027-05-08,2,cancelled", lines[1])
     }
+
+    /** US 02.11.01: a winner can reserve once they picked dates and accepted the rules */
+    @Test
+    fun canReserveAfterPickingDatesAndAcceptingRules() {
+        assertTrue(Reservation.canReserve(listOf("2027-05-07"), acceptedRules = true))
+    }
+
+    /** US 02.11.01: a winner can't reserve without accepting the campsite rules */
+    @Test
+    fun cannotReserveWithoutAcceptingRules() {
+        assertFalse(Reservation.canReserve(listOf("2027-05-07"), acceptedRules = false))
+    }
+
+    /** US 02.11.01: accepting the rules is not enough if no nights are picked */
+    @Test
+    fun cannotReserveWithNoDatesEvenIfRulesAccepted() {
+        assertFalse(Reservation.canReserve(emptyList(), acceptedRules = true))
+    }
 }

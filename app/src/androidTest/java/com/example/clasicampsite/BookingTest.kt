@@ -1,10 +1,11 @@
-/*
-Purpose: Intent tests for booking a campsite after winning a lottery: seeing available dates
-(US 01.04.01), picking a campsite and dates (US 01.04.02), declining (US 01.04.03), and getting
-the confirmation with a CSV download (US 01.05.01, US 01.05.02).
-Outstanding issues: Uses the real Firestore database, so it needs internet. It saves a test
-lottery and deletes its test reservations before each test.
-*/
+/**
+ * Purpose: Intent tests for booking a campsite after winning a lottery: seeing available dates
+ * (US 01.04.01), picking a campsite and dates (US 01.04.02), declining (US 01.04.03), accepting
+ * the campsite rules (US 02.11.01), and getting the confirmation with a CSV download
+ * (US 01.05.01, US 01.05.02).
+ * Outstanding issues: Uses the real Firestore database, so it needs internet. It saves a test
+ * lottery and deletes its test reservations before each test.
+ */
 package com.example.clasicampsite
 
 import android.provider.Settings
@@ -31,6 +32,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/** Tests the Available Dates screen with a test lottery this device won. */
 @RunWith(AndroidJUnit4::class)
 class BookingTest {
 
@@ -80,12 +82,18 @@ class BookingTest {
         waitFor("date_2099-07-01")
     }
 
+    /**
+     * Waits up to 15 seconds for a node with [tag], because Firestore takes time.
+     *
+     * @param tag the test tag to wait for
+     */
     private fun waitFor(tag: String) {
         composeRule.waitUntil(15_000) {
             composeRule.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
         }
     }
 
+    /** US 01.04.01: a winner sees the dates they can book */
     @Test
     fun winnerSeesAvailableDates() {
         openScreen()
@@ -94,6 +102,7 @@ class BookingTest {
         composeRule.onNodeWithTag("date_2099-07-03").assertIsDisplayed()
     }
 
+    /** US 01.04.02: a winner can pick a campsite and dates */
     @Test
     fun winnerCanPickACampsiteAndDates() {
         openScreen()
@@ -106,13 +115,39 @@ class BookingTest {
         composeRule.onNodeWithTag("date_2099-07-02").performClick()
 
         composeRule.onNodeWithTag("selectedCountText").assertTextContains("2 night(s) selected")
+        composeRule.onNodeWithTag("acceptRulesCheckbox").performClick()
         composeRule.onNodeWithTag("reserveButton").assertIsEnabled()
     }
 
+    /** US 02.11.01: Reserve stays off until the winner ticks that they read the rules */
+    @Test
+    fun reserveNeedsRulesToBeAccepted() {
+        openScreen()
+        composeRule.onNodeWithTag("date_2099-07-01").performClick()
+        composeRule.onNodeWithTag("reserveButton").assertIsNotEnabled()
+
+        composeRule.onNodeWithTag("acceptRulesCheckbox").performClick()
+        composeRule.onNodeWithTag("reserveButton").assertIsEnabled()
+    }
+
+    /** US 02.11.01: the winner can open the rules and accept them from the popup */
+    @Test
+    fun winnerCanReadAndAcceptTheRules() {
+        openScreen()
+        composeRule.onNodeWithTag("viewRulesLink").performClick()
+        composeRule.onNodeWithTag("rulesText").assertIsDisplayed()
+        composeRule.onNodeWithTag("acceptRulesButton").performClick()
+
+        composeRule.onNodeWithTag("date_2099-07-01").performClick()
+        composeRule.onNodeWithTag("reserveButton").assertIsEnabled()
+    }
+
+    /** US 01.05.01, US 01.05.02: reserving opens the confirmation with a CSV download */
     @Test
     fun reservingShowsConfirmationWithCsvDownload() {
         openScreen()
         composeRule.onNodeWithTag("date_2099-07-01").performClick()
+        composeRule.onNodeWithTag("acceptRulesCheckbox").performClick()
         composeRule.onNodeWithTag("reserveButton").performClick()
 
         waitFor("confirmedTitle")
@@ -120,6 +155,7 @@ class BookingTest {
         composeRule.onNodeWithTag("downloadCsvButton").assertIsDisplayed()
     }
 
+    /** US 01.04.03: a winner can decline their reservation */
     @Test
     fun winnerCanDecline() {
         openScreen()

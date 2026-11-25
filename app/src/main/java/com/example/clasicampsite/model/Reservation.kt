@@ -78,6 +78,17 @@ data class Reservation(
     /** Helper functions that work on a list of reservations. */
     companion object {
         /**
+         * Returns true if a winner is allowed to reserve: they picked at least one night and
+         * ticked the box saying they read the campsite rules and policies (US 02.11.01).
+         *
+         * @param selectedDates the nights the winner picked
+         * @param acceptedRules true if the rules checkbox is ticked
+         * @return true if the Reserve button should be enabled
+         */
+        fun canReserve(selectedDates: List<String>, acceptedRules: Boolean): Boolean =
+            selectedDates.isNotEmpty() && acceptedRules
+
+        /**
          * Returns every date taken by an active reservation.
          *
          * @param reservations the reservations for one campsite
