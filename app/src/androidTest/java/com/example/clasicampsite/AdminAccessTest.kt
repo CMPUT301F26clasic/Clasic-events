@@ -1,6 +1,7 @@
-//Purpose: Intent tests for admin access (US 03.11.01): only admins see the admin buttons on Home.
-//Outstanding issues: Changes this emulator's admin setting in Firestore, then sets it back to admin.
-
+/**
+ * Purpose: Intent tests for admin access (US 03.11.01): only admins see the admin buttons on Home.
+ * Outstanding issues: Changes this emulator's admin setting in Firestore, then sets it back to admin.
+ */
 package com.example.clasicampsite
 
 import android.provider.Settings
@@ -64,11 +65,13 @@ class AdminAccessTest {
     fun regularUserDoesNotSeeAdminButtons() {
         setAdmin(false)
         reopenHome()
-        Thread.sleep(3_000) // give Home time to finish checking with Firestore
+        /** give Home time to finish checking with Firestore */
+        Thread.sleep(3_000)
         composeRule.onNodeWithTag("adminProfilesButton").assertDoesNotExist()
         composeRule.onNodeWithTag("adminCampsitesButton").assertDoesNotExist()
         composeRule.onNodeWithTag("adminImagesButton").assertDoesNotExist()
-        setAdmin(true) // put this emulator back to admin for the other tests
+        /** put this emulator back to admin for the other tests */
+        setAdmin(true)
     }
 
     /** US 03.11.01: an admin who picks "View as: User" on Profile doesn't see the admin buttons. */
@@ -82,9 +85,11 @@ class AdminAccessTest {
         composeRule.onNodeWithTag("viewAsButton").performClick()
         composeRule.onNodeWithTag("viewAsUserOption").performClick()
         composeRule.onNodeWithTag("backButton").performClick()
-        Thread.sleep(3_000) // give Home time to finish checking
+        /** give Home time to finish checking */
+        Thread.sleep(3_000)
         composeRule.onNodeWithTag("adminProfilesButton").assertDoesNotExist()
         composeRule.onNodeWithTag("myCampsitesButton").assertIsDisplayed()
-        AdminAccess.viewAsUser = false // back to admin for the other tests
+        /** back to admin for the other tests */
+        AdminAccess.viewAsUser = false
     }
 }

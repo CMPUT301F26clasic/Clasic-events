@@ -1,7 +1,7 @@
-/*
+/**
  * Purpose: Displays in-app notifications for the user, including campsite lottery
  * win and loss updates (#5).
- * Outstanding issues: Uses placeholder device ID if not wired to MainActivity yet.
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite
 
@@ -33,6 +33,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
 
+/**
+ * Shows this user's notifications, newest first, like lottery wins and losses (US 01.03.01).
+ *
+ * @param navController used to go back
+ * @param deviceId the device ID of the user whose notifications are shown, or "" for this phone
+ * @param dbController where the notifications are loaded from
+ */
 @Composable
 fun NotificationScreen(
     navController: NavController,
@@ -42,8 +49,10 @@ fun NotificationScreen(
     var notifications by remember { mutableStateOf<List<String>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // The app's "notifications" route doesn't pass an ID, so fall back to this phone's ID
-    // (the same ID the rest of the app uses to identify users, US 01.09.01).
+    /**
+     * The app's "notifications" route doesn't pass an ID, so fall back to this phone's ID
+     * (the same ID the rest of the app uses to identify users, US 01.09.01).
+     */
     val context = LocalContext.current
     val userId = remember(deviceId) {
         deviceId.ifBlank {

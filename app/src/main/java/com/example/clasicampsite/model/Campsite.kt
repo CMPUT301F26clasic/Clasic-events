@@ -1,6 +1,6 @@
-/*
+/**
  * Purpose: Data model for a campsite listing, stored in the Firestore "campsites" collection.
- * Outstanding issues: Promo image (US 02.01.02) and map location are not added yet.
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite.model
 
@@ -34,7 +34,7 @@ data class Campsite(
     val availableFrom: LocalDate = LocalDate.of(1970, 1, 1),
     val availableTo: LocalDate = LocalDate.of(1970, 1, 1),
     var numberOfWinners: Int = 0,
-    // Owner fields (US 02.01.02) go last so code that builds a Campsite by position still works.
+    /** Owner fields (US 02.01.02) go last so code that builds a Campsite by position still works. */
     var ownerId: String = "",
     var description: String = "",
     var pricePerNight: Double = 0.0,
@@ -44,6 +44,14 @@ data class Campsite(
     var longitude: Double? = null
 )
 
+/**
+ * The filters picked on the campsite list (US 01.01.02).
+ *
+ * @property location Text the campsite location must contain, or "" for any
+ * @property guests Number of guests the campsite must fit, or null for any
+ * @property startDate First night of the stay, or null
+ * @property endDate Last night of the stay, or null
+ */
 data class CampsiteFilter(
     val location: String = "",
     val guests: Int? = null,

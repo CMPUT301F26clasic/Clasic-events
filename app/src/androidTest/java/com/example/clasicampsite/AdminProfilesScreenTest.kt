@@ -1,6 +1,7 @@
-//Purpose: Intent tests for the admin profiles screen (US 03.05.01, US 03.02.01, US 03.07.01).
-//The tests make this emulator an admin first, since only admins see the admin buttons (US 03.11.01).
-
+/**
+ * Purpose: Intent tests for the admin profiles screen (US 03.05.01, US 03.02.01, US 03.07.01).
+ * The tests make this emulator an admin first, since only admins see the admin buttons (US 03.11.01).
+ */
 package com.example.clasicampsite
 
 import android.provider.Settings
@@ -81,7 +82,7 @@ class AdminProfilesScreenTest {
         saveProfile("Admin Test User")
         openAdminProfiles()
         waitForText("Admin Test User")
-        // The list holds every profile, so scroll to this device's one first
+        /** The list holds every profile, so scroll to this device's one first */
         composeRule.onNodeWithTag("profileList").performScrollToNode(hasText("Device ID: ${deviceId()}"))
         composeRule.onNodeWithText("Device ID: ${deviceId()}").assertIsDisplayed()
     }
@@ -119,7 +120,7 @@ class AdminProfilesScreenTest {
                 )
             ).await()
         }
-        // Leave Home and come back so it checks admin again
+        /** Leave Home and come back so it checks admin again */
         composeRule.onNodeWithTag("profileButton").performClick()
         composeRule.onNodeWithTag("backButton").performClick()
         openAdminProfiles()

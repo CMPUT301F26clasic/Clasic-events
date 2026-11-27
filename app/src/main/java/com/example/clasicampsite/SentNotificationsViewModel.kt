@@ -1,4 +1,4 @@
-/*
+/**
  * Purpose: Loads the notifications this phone's owner has sent to their waitlists, for
  * the Sent Notifications screen (US 02.10.02).
  * Outstanding issues: Only shows notifications sent from the Notify Waitlist screen

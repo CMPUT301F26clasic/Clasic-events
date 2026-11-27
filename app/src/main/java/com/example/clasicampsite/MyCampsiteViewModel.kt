@@ -1,4 +1,4 @@
-/*
+/**
  * Purpose: Gets the list of campsites this phone's owner has made, for the
  * My Campsites screen (US 02.03.01).
  * Outstanding issues: Owners are only identified by device ID, no owner/entrant roles yet.

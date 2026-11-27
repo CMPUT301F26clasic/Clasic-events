@@ -1,7 +1,7 @@
-/*
-Purpose: Holds the admin's list of campsite reviews/ratings and removes ones that
-violate app policy (#71).
-Outstanding issues: None.
+/**
+ * Purpose: Holds the admin's list of campsite reviews/ratings and removes ones that
+ * violate app policy (#71).
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite
 

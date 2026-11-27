@@ -1,6 +1,7 @@
-//Purpose: Intent tests for the admin campsites screen (US 03.04.01: admin browses every campsite).
-//The tests make this emulator an admin first, since only admins see the admin buttons (US 03.11.01).
-
+/**
+ * Purpose: Intent tests for the admin campsites screen (US 03.04.01: admin browses every campsite).
+ * The tests make this emulator an admin first, since only admins see the admin buttons (US 03.11.01).
+ */
 package com.example.clasicampsite
 
 import android.provider.Settings
@@ -71,7 +72,7 @@ class AdminCampsitesScreenTest {
 
     /** Opens the admin campsites screen from Home and waits for the list to load. */
     private fun openAdminCampsites() {
-        // Leave Home and come back so it checks admin again, then wait for the admin button.
+        /** Leave Home and come back so it checks admin again, then wait for the admin button. */
         composeRule.onNodeWithTag("profileButton").performClick()
         composeRule.onNodeWithTag("backButton").performClick()
         composeRule.waitUntil(10_000) {
@@ -82,7 +83,7 @@ class AdminCampsitesScreenTest {
         composeRule.waitUntil(10_000) {
             composeRule.onAllNodesWithTag("adminCampsiteList").fetchSemanticsNodes().isNotEmpty()
         }
-        // The list is lazy, so scroll to the test campsite in case there are many.
+        /** The list is lazy, so scroll to the test campsite in case there are many. */
         composeRule.onNodeWithTag("adminCampsiteList").performScrollToNode(hasText(testName))
     }
 

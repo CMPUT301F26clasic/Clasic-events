@@ -1,7 +1,7 @@
-/*
-Purpose: The admin screen that lists every campsite. Tapping one opens its details.
-Only admins can use it; everyone else sees "Admins only" (US 03.11.01).
-Outstanding issues: None.
+/**
+ * Purpose: The admin screen that lists every campsite. Tapping one opens its details.
+ * Only admins can use it; everyone else sees "Admins only" (US 03.11.01).
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite
 
@@ -34,7 +34,7 @@ import androidx.navigation.NavController
 /** The admin's list of every campsite. */
 @Composable
 fun AdminCampsitesScreen(navController: NavController) {
-    // only admins can see this screen. null = still checking with Firestore.
+    /** only admins can see this screen. null = still checking with Firestore. */
     val context = LocalContext.current
     var allowed by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) {

@@ -1,9 +1,9 @@
-/*
+/**
  * File: FirestoreConnectionTest.kt
  * Purpose: Checks that the app can write to and read from Firestore, which every
- *          data-saving user story depends on.
+ * data-saving user story depends on.
  * Outstanding issues: Uses the live database (collection "connectionTest"), so it needs an
- *                     internet connection and Firestore rules that allow reads and writes.
+ * internet connection and Firestore rules that allow reads and writes.
  */
 package com.example.clasicampsite
 
@@ -17,11 +17,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
-// Tests that Firebase setup works on real device or emulator
+/** Tests that Firebase setup works on real device or emulator */
 @RunWith(AndroidJUnit4::class)
 class FirestoreConnectionTest {
 
-    //Writes timestamp to Firestore, reads it back from server, checks it matches
+    /** Setup (#49): writes timestamp to Firestore, reads it back from server, checks it matches */
     @Test
     fun writeThenReadBackFromServer() = runBlocking {
         val doc = FirebaseFirestore.getInstance()

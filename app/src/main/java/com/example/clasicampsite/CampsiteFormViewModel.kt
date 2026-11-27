@@ -1,4 +1,4 @@
-/*
+/**
  * Purpose: Keeps track of what's typed on the campsite form and handles loading and
  * saving it to Firestore, plus the promo picture and map location (US 02.01.01 - 02.01.04).
  * Outstanding issues: Finding a map location needs internet and a phone or emulator
@@ -133,7 +133,7 @@ class CampsiteFormViewModel(application: Application) : AndroidViewModel(applica
         }
         viewModelScope.launch {
             try {
-                // Looking up a place uses the internet, so do it off the main thread.
+                /** Looking up a place uses the internet, so do it off the main thread. */
                 val results = withContext(Dispatchers.IO) {
                     @Suppress("DEPRECATION")
                     Geocoder(getApplication(), Locale.getDefault()).getFromLocationName(place, 1)

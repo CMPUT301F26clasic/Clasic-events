@@ -1,8 +1,8 @@
-/*
-Purpose: The admin screen that lists every profile and lets the admin remove one after confirming
-Only admins can use it; everyone else sees "Admins only" (US 03.11.01). Shows how many campsites
-each user owns. Removing a user also removes those (US 03.07.01).
-Outstanding issues: None.
+/**
+ * Purpose: The admin screen that lists every profile and lets the admin remove one after confirming
+ * Only admins can use it; everyone else sees "Admins only" (US 03.11.01). Shows how many campsites
+ * each user owns. Removing a user also removes those (US 03.07.01).
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite
 
@@ -42,7 +42,7 @@ import androidx.compose.ui.layout.ContentScale
 /** The admin's list of every profile. */
 @Composable
 fun AdminProfilesScreen(navController: NavController) {
-    // only admins can see this screen. null = still checking with Firestore.
+    /** only admins can see this screen. null = still checking with Firestore. */
     val context = LocalContext.current
     var allowed by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) {

@@ -1,7 +1,7 @@
-/*
-Purpose: Intent tests for color blind mode (WOW factor). Picking a mode from the Profile
-dropdown changes it right away, and the mode is saved with the profile.
-Outstanding issues: Changes this emulator's saved profile, then sets it back to regular.
+/**
+ * Purpose: Intent tests for color blind mode (WOW factor). Picking a mode from the Profile
+ * dropdown changes it right away, and the mode is saved with the profile.
+ * Outstanding issues: Changes this emulator's saved profile, then sets it back to regular.
  */
 package com.example.clasicampsite
 
@@ -25,7 +25,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Tests color blind mode by using the app. */
+/** Colour blind mode (#76, WOW factor): tests color blind mode by using the app. */
 @RunWith(AndroidJUnit4::class)
 class ColorBlindModeTest {
 

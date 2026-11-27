@@ -1,8 +1,8 @@
-/*
-Purpose: Decides who is an admin (US 03.11.01). A user is an admin when their Firestore user
-document has admin = true, which is set by hand in Firebase. Also holds the message shown to
-non-admins who reach an admin screen. An admin can choose to view the app as a regular user.
-Outstanding issues: None.
+/**
+ * Purpose: Decides who is an admin (US 03.11.01). A user is an admin when their Firestore user
+ * document has admin = true, which is set by hand in Firebase. Also holds the message shown to
+ * non-admins who reach an admin screen. An admin can choose to view the app as a regular user.
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite
 
@@ -30,7 +30,7 @@ import androidx.compose.runtime.setValue
 /** Checks whether the person using this device is an admin. */
 object AdminAccess {
 
-    // true when an admin picked "View as: User" on Profile. Resets when the app closes.
+    /** true when an admin picked "View as: User" on Profile. Resets when the app closes. */
     var viewAsUser by mutableStateOf(false)
 
     /** Returns this device's ID, the same one profiles are saved under. */

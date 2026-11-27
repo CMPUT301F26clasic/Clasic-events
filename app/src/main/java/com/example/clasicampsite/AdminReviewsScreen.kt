@@ -1,8 +1,8 @@
-/*
-Purpose: The admin screen that lists campsite reviews/ratings and lets an admin
-remove reviews that violate app policy after confirming (#71).
-Only admins can use it; everyone else sees "Admins only" (US 03.11.01).
-Outstanding issues: None.
+/**
+ * Purpose: The admin screen that lists campsite reviews/ratings and lets an admin
+ * remove reviews that violate app policy after confirming (#71).
+ * Only admins can use it; everyone else sees "Admins only" (US 03.11.01).
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite
 

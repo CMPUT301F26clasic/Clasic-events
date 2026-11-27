@@ -1,8 +1,9 @@
-/*
+/**
  * Purpose: The screen an owner uses to add a new campsite (US 02.01.01, 02.01.02),
  * look at one they already made (US 02.01.04), and change it (US 02.01.03), including
- * an optional promo picture and map location.
- * Outstanding issues: None known.\
+ * an optional promo picture and map location, the available dates and the number of lottery
+ * winners.
+ * Outstanding issues: None known.
  * The photo picker code is based on ProfileScreen.kt.
  */
 package com.example.clasicampsite
@@ -44,6 +45,16 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.remember
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 /**
  * One screen for both adding and editing. If there's no [campsiteId] it's a blank
  * form for a new campsite, otherwise it loads that campsite and locks the fields until
@@ -55,12 +66,12 @@ fun CampsiteFormScreen(navController: NavController, campsiteId: String = "") {
     LaunchedEffect(campsiteId) { viewModel.start(campsiteId) }
     val context = LocalContext.current
 
-    // Opens Android's photo picker. When a photo is chosen, hand it to the ViewModel.
+    /** Opens Android's photo picker. When a photo is chosen, hand it to the ViewModel. */
     val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) viewModel.setImage(uri)
     }
 
-    // Turns the saved text back into a picture (decodePicture is in ProfileScreen.kt).
+    /** Turns the saved text back into a picture (decodePicture is in ProfileScreen.kt). */
     val picture = remember(viewModel.form.image) { decodePicture(viewModel.form.image) }
 
     val title = when {
@@ -113,7 +124,18 @@ fun CampsiteFormScreen(navController: NavController, campsiteId: String = "") {
             viewModel.form = form.copy(tags = it)
         }
 
-        // Promo picture (optional, US 02.01.02)
+        /** Available dates and lottery winners, needed before the owner can draw winners */
+        FormDateField("First available night", form.availableFrom, readOnly, "campsiteAvailableFromButton") {
+            viewModel.form = form.copy(availableFrom = it)
+        }
+        FormDateField("Last available night", form.availableTo, readOnly, "campsiteAvailableToButton") {
+            viewModel.form = form.copy(availableTo = it)
+        }
+        FormField("Number of lottery winners", form.numberOfWinners, readOnly, "campsiteWinnersField", KeyboardType.Number) {
+            viewModel.form = form.copy(numberOfWinners = it)
+        }
+
+        /** Promo picture (optional, US 02.01.02) */
         if (picture != null) {
             Image(
                 bitmap = picture,
@@ -145,7 +167,7 @@ fun CampsiteFormScreen(navController: NavController, campsiteId: String = "") {
             }
         }
 
-        // Map location (optional, US 02.01.02)
+        /** Map location (optional, US 02.01.02) */
         FormField("Latitude (optional)", form.latitude, readOnly, "campsiteLatitudeField") {
             viewModel.form = form.copy(latitude = it)
         }
@@ -199,7 +221,7 @@ fun CampsiteFormScreen(navController: NavController, campsiteId: String = "") {
             ) {
                 Text("Edit")
             }
-            // US 02.10.01: send a notification to everyone on this campsite's waitlist
+            /** US 02.10.01: send a notification to everyone on this campsite's waitlist */
             OutlinedButton(
                 onClick = { navController.navigate("notify_waitlist/$campsiteId") },
                 modifier = Modifier.fillMaxWidth().testTag("notifyWaitlistButton"),
@@ -234,6 +256,63 @@ private fun FormField(
         modifier = Modifier.fillMaxWidth().testTag(tag),
     )
 }
+/**
+ * A button showing a date on the campsite form. Tapping it opens a date picker, unless the form
+ * is [readOnly].
+ *
+ * @param label shown when no date is picked yet
+ * @param date the picked date, or null
+ * @param readOnly true when the form is only being looked at
+ * @param tag test tag for the button
+ * @param onDateSelected called with the date the owner picks
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FormDateField(
+    label: String,
+    date: LocalDate?,
+    readOnly: Boolean,
+    tag: String,
+    onDateSelected: (LocalDate) -> Unit,
+) {
+    var showPicker by remember { mutableStateOf(false) }
+
+    OutlinedButton(
+        onClick = { if (!readOnly) showPicker = true },
+        modifier = Modifier.fillMaxWidth().testTag(tag),
+    ) {
+        Text(if (date == null) label else "$label: $date")
+    }
+
+    if (showPicker) {
+        val pickerState = rememberDatePickerState(
+            initialSelectedDateMillis = date?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pickerState.selectedDateMillis?.let { millis ->
+                            onDateSelected(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
+                        }
+                        showPicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) {
+                    Text("Cancel")
+                }
+            },
+        ) {
+            DatePicker(state = pickerState)
+        }
+    }
+}
+
 /** Opens Google Maps (or the web browser) at [latitude], [longitude]. */
 private fun openMap(context: Context, latitude: Double, longitude: Double) {
     val url = "https://www.google.com/maps/search/?api=1&query=$latitude,$longitude"

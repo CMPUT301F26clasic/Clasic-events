@@ -1,6 +1,7 @@
-//Purpose: Intent tests for the admin images screen (US 03.06.01, US 03.03.01).
-//Saves a test user with a picture first and deletes them after. Makes this emulator an admin.
-
+/**
+ * Purpose: Intent tests for the admin images screen (US 03.06.01, US 03.03.01).
+ * Saves a test user with a picture first and deletes them after. Makes this emulator an admin.
+ */
 package com.example.clasicampsite
 
 import android.provider.Settings
@@ -37,7 +38,7 @@ class AdminImagesScreenTest {
     private val testId = "admin_test_image_user"
     private val testName = "Image Test User"
 
-    // A tiny 4x4 green picture, stored as Base64 text the same way the app stores pictures
+    /** A tiny 4x4 green picture, stored as Base64 text the same way the app stores pictures */
     private val testImage =
         "iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGPQ6w6HIwbiOAC3sxEBvcZG2wAAAABJRU5ErkJggg=="
 
@@ -71,7 +72,7 @@ class AdminImagesScreenTest {
 
     /** Opens the admin images screen from Home and scrolls to the test user's picture. */
     private fun openAdminImages() {
-        // Leave Home and come back so it checks admin again
+        /** Leave Home and come back so it checks admin again */
         composeRule.onNodeWithTag("profileButton").performClick()
         composeRule.onNodeWithTag("backButton").performClick()
         composeRule.waitUntil(10_000) {
@@ -104,6 +105,7 @@ class AdminImagesScreenTest {
 
         val user = runBlocking { DatabaseController().getUser(testId) }
         assertEquals("", user.profileImage)
-        assertEquals(testName, user.name) // the profile itself is still there
+        /** the profile itself is still there */
+        assertEquals(testName, user.name)
     }
 }

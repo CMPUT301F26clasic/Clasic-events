@@ -1,8 +1,8 @@
-/*
-Purpose: Intent tests for the admin campsite reviews moderation screen (#71).
-Makes this emulator an admin, seeds a test review in Firestore, and verifies
-the admin can remove policy-violating reviews.
-Outstanding issues: None.
+/**
+ * Purpose: Intent tests for the admin campsite reviews moderation screen (#71).
+ * Makes this emulator an admin, seeds a test review in Firestore, and verifies
+ * the admin can remove policy-violating reviews.
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite
 
@@ -79,12 +79,18 @@ class AdminReviewsScreenTest {
         db.deleteCampsite(testCampsiteId)
     }
 
+    /**
+     * Waits up to 10 seconds for [text] to appear, because Firestore takes time.
+     *
+     * @param text the text to wait for
+     */
     private fun waitForText(text: String) {
         composeRule.waitUntil(10_000) {
             composeRule.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty()
         }
     }
 
+    /** Opens the admin reviews screen from Home and waits for it to load. */
     private fun openAdminReviews() {
         composeRule.onNodeWithTag("profileButton").performClick()
         composeRule.onNodeWithTag("backButton").performClick()
@@ -99,7 +105,7 @@ class AdminReviewsScreenTest {
         composeRule.onNodeWithTag("adminReviewList").performScrollToNode(hasText(testCampsiteName))
     }
 
-    /** Admin sees campsite reviews in the moderation list. */
+    /** US 03.10.01: admin sees campsite reviews in the moderation list. */
     @Test
     fun adminCanViewCampsiteReviews() {
         openAdminReviews()
@@ -107,7 +113,7 @@ class AdminReviewsScreenTest {
         composeRule.onNodeWithText("Comment: $testComment").assertIsDisplayed()
     }
 
-    /** Admin confirms removal and the review is deleted from Firestore. */
+    /** US 03.10.01: admin confirms removal and the review is deleted from Firestore. */
     @Test
     fun adminCanRemoveViolatingReview() {
         openAdminReviews()

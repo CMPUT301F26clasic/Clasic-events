@@ -1,7 +1,7 @@
-/*
-Purpose: Holds the admin's list of uploaded images and removes ones that break the app policy
-(US 03.06.01, US 03.03.01). Right now the only uploaded images are profile pictures.
-Outstanding issues: Campsites can't have pictures yet, so none are listed here.
+/**
+ * Purpose: Holds the admin's list of uploaded images and removes ones that break the app policy
+ * (US 03.06.01, US 03.03.01). Right now the only uploaded images are profile pictures.
+ * Outstanding issues: Campsites can't have pictures yet, so none are listed here.
  */
 package com.example.clasicampsite
 
