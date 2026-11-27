@@ -1,3 +1,8 @@
+/*
+Purpose: Root navigation graph connecting all screens in the clasiCampsite app.
+Outstanding issues: None.
+ */
+
 package com.example.clasicampsite
 
 import androidx.compose.runtime.Composable
@@ -43,5 +48,11 @@ fun clasiCampsiteApp() {
             val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
             LotteryManagementScreen(navController = navController, campsiteId = campsiteId)
         }
+        composable("owner_schedule/{campsiteId}") { backStackEntry ->
+            val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
+            OwnerCampsiteScheduleScreen(navController = navController, campsiteId = campsiteId)
+        }
+        composable("shared_lottery") { SharedLotteryScreen(navController) }
+        composable("admin_reviews") { AdminReviewsScreen(navController) }
     }
 }

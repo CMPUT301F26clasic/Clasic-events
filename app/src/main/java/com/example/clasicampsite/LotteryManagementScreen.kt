@@ -1,3 +1,9 @@
+/*
+Purpose: Lets a campsite owner set the number of lottery winners, view the waitlist,
+and draw/notify entrants (US 02.04.05, US 02.09.01, #5).
+Outstanding issues: None.
+ */
+
 package com.example.clasicampsite
 
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +40,7 @@ import com.example.clasicampsite.data.DatabaseController
 import kotlinx.coroutines.launch
 
 //  The following ui and function layouts are from, ChatGPT "Provide a layout for my lotterymanagementscreen", 2026-11-06
+/** Screen where a campsite owner manages lottery winner count and notifies entrants. */
 @Composable
 fun LotteryManagementScreen(
     navController: NavController,
@@ -50,6 +57,8 @@ fun LotteryManagementScreen(
     var successMessage by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
+
+    var isSendingNotifications by remember { mutableStateOf(false) }
 
     // Load the campsite and its lottery entrants.
     LaunchedEffect(campsiteId) {
@@ -154,6 +163,44 @@ fun LotteryManagementScreen(
                 modifier = Modifier.testTag("saveWinnerCountButton")
             ) {
                 Text(if (isSaving) "Saving..." else "Save Winner Count")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                enabled = !isSaving && !isSendingNotifications,
+                onClick = {
+                    val count = winnerCount.toIntOrNull()
+                    if (count == null || count <= 0) {
+                        errorMessage = "Please enter a number of winners greater than zero."
+                    } else {
+                        coroutineScope.launch {
+                            try {
+                                isSendingNotifications = true
+                                errorMessage = null
+                                successMessage = ""
+
+                                val entrants = dbController.getLotteryEntrants(campsiteId)
+                                val entrantIds = entrants.map { it.userId }.distinct()
+                                val pickedWinners = entrantIds.shuffled().take(count)
+
+                                dbController.sendLotteryOutcomeNotifications(
+                                    campsiteName = campsiteName.ifBlank { "this campsite" },
+                                    entrantUserIds = entrantIds,
+                                    winnerUserIds = pickedWinners,
+                                )
+
+                                successMessage = "Sent notifications (${pickedWinners.size} winner(s), ${entrantIds.size - pickedWinners.size} not selected)."
+                            } catch (e: Exception) {
+                                errorMessage = "Failed to send notifications: ${e.localizedMessage}"
+                            } finally {
+                                isSendingNotifications = false
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.testTag("notifyEntrantsButton"),
+            ) {
+                Text(if (isSendingNotifications) "Sending..." else "Draw & Notify Entrants")
             }
 
             if (successMessage.isNotBlank()) {
