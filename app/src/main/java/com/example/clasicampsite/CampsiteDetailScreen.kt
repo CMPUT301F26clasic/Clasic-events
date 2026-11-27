@@ -50,51 +50,58 @@ fun CampsiteDetailScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     //keya adding variables for already in lottery list //
     var alreadyinLottery by remember { mutableStateOf(false) }
-    var updateLottery by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
+    var updateLottery by remember { mutableStateOf(false) }//true when joining/leaving lottery
+    val scope = rememberCoroutineScope()// runs database calls from a click
     val context = LocalContext.current
+    //making sure the phone id is with the unique id
     val userId = remember {
         Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
     }
-    var userrating by remember { mutableStateOf<Int?>(null) }
-    var showRating by remember { mutableStateOf<Double?>(null) }
-    var rating by remember { mutableStateOf(false) }
-    var ratingError by remember { mutableStateOf<String?>(null) }
+    //the variables for ating
+    var userrating by remember { mutableStateOf<Int?>(null) } //this ones for rating by users
+    var showRating by remember { mutableStateOf<Double?>(null) } //avergare rating shown
+    var rating by remember { mutableStateOf(false) } //the rating with the stars
+    var ratingError by remember { mutableStateOf<String?>(null) } //error message for rating
 
 
 
     // Fetch details from Firestore when campsiteId changes
+    // Fetch details from Firestore when campsiteId changes
     LaunchedEffect(campsiteId) {
-        if (campsiteId.isNotBlank()) {
-            try {
-                isLoading = true
+        val effectiveId = campsiteId.ifBlank { "sample_1" }
+
+        try {
+            isLoading = true
+
+            if (campsiteId.isNotBlank()) {
                 val fetched = dbController.getCampsite(campsiteId)
                 if (fetched != null) {
                     campsite = fetched
                     showRating = fetched.rating
-                    alreadyinLottery =
-                        userId != null && dbController.isUserInLottery(campsiteId, userId)
-                    userrating = dbController.getUserRating(campsiteId, userId)}
-                else {
+                } else {
                     errorMessage = "Campsite not found."
                 }
-            } catch (e: Exception) {
-                errorMessage = "Failed to load campsite: ${e.localizedMessage}"
-            } finally {
-                isLoading = false
+            } else {
+                // Sample fallback data
+                campsite = Campsite(
+                    id = "sample_1",
+                    name = "Pine Ridge Campsite",
+                    location = "Banff National Park, AB",
+                    maxOccupancy = 6,
+                    rating = 4.8,
+                    availableFrom = LocalDate.of(2027, 5, 1),
+                    availableTo = LocalDate.of(2027, 9, 30)
+                )
             }
-        } else {
-            // Sample fallback data if no ID provided for preview/testing
-            campsite = Campsite(
-                id = "sample_1",
-                name = "Pine Ridge Campsite",
-                location = "Banff National Park, AB",
-                maxOccupancy = 6,
-                rating = 4.8,
-                availableFrom = LocalDate.of(2027, 5, 1),
-                availableTo = LocalDate.of(2027, 9, 30)
-            )
 
+            // Always load the user's saved state, whichever branch ran
+            if (errorMessage == null && userId != null) {
+                alreadyinLottery = dbController.isUserInLottery(effectiveId, userId)
+                userrating = dbController.getUserRating(effectiveId, userId)
+            }
+        } catch (e: Exception) {
+            errorMessage = "Failed to load campsite: ${e.localizedMessage}"
+        } finally {
             isLoading = false
         }
     }
@@ -141,27 +148,31 @@ fun CampsiteDetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            //a function to join/leave waitlist
             val onToggle: () -> Unit = {
                 if (userId != null) {
+                    //goe sto the launch cause the database takes time
                     scope.launch {
                         updateLottery = true
                         try {
                             if (alreadyinLottery) {
+                                //so if your already in the lottery then u can just do leave
                                 dbController.leaveLottery(site.id, userId)
                                 alreadyinLottery = false
                             } else {
+                                //if your not in then u can join
                                 dbController.joinLottery(site.id, userId)
                                 alreadyinLottery = true
                             }
                         } catch (e: Exception) {
                             errorMessage = "Lottery update failed: ${e.localizedMessage}"
                         } finally {
-                            updateLottery = false
+                            updateLottery = false //turn sthe button back on
                         }
                     }
                 }
             }
-
+            //just building the buttons
             if (alreadyinLottery) {
                 OutlinedButton(
                     onClick = onToggle,
@@ -251,6 +262,7 @@ fun CampsiteDetailScreen(
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Text(
+                                //inputs the stars for teh rating
                                 text = "★ ${showRating ?: site.rating} / 5.0",
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium,
@@ -276,12 +288,14 @@ fun CampsiteDetailScreen(
             // Star picker, below the card
             Spacer(modifier = Modifier.height(16.dp))
 
+            //the lael changing based on if they rated it or not
             Text(
                 text = if (userrating == null) "Rate this campsite" else "Your rating",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
 
+            //so this part turns the star into coloured stars when they are rating teh stars get filled in
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 for (star in 1..5) {
                     Text(
@@ -294,9 +308,9 @@ fun CampsiteDetailScreen(
                                 scope.launch {
                                     rating = true
                                     ratingError = null
-                                    try {
+                                    try {//saves rating makes a new average
                                         showRating = dbController.rateCampsite(site.id, userId, star)
-                                        userrating = star
+                                        userrating = star //updates star
                                     } catch (e: Exception) {
                                         ratingError = "Rating failed: ${e.localizedMessage}"
                                     } finally {

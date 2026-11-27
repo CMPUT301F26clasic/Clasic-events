@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,6 +35,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Campsite
 import com.example.clasicampsite.model.CampsiteFilter
 import java.time.LocalDate
@@ -49,7 +51,7 @@ private val sampleCampsites = listOf(
     Campsite("craycray", "River Bend", "Hinton, AB", 2, 3.8, LocalDate.of(2027, 5, 1), LocalDate.of(2027, 7, 31))
 )
 
-internal fun Campsite.matchesSearch(query: String): Boolean {
+private fun Campsite.matchesSearch(query: String): Boolean {
     val q = query.trim()
     if (q.isEmpty()) return true
 
@@ -62,7 +64,7 @@ internal fun Campsite.matchesSearch(query: String): Boolean {
     return matchesText || matchesOccupancy
 }
 
-internal fun Campsite.matchesFilter(filter: CampsiteFilter): Boolean {
+private fun Campsite.matchesFilter(filter: CampsiteFilter): Boolean {
     if (filter.location.isNotBlank() &&
         !location.contains(filter.location.trim(), ignoreCase = true)
     ) return false
@@ -86,8 +88,19 @@ fun CampsiteListScreen(navController: NavController) {
     var filter by remember { mutableStateOf(CampsiteFilter()) }
     var showFilterDialog by remember { mutableStateOf(false) }
 
-    val filteredCampsites = remember(searchQuery, filter) {
-        sampleCampsites.filter { it.matchesSearch(searchQuery) && it.matchesFilter(filter) }
+    val dbController = remember { DatabaseController() }
+    var campsites by remember { mutableStateOf<List<Campsite>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        try {
+            campsites = dbController.getCampsites()
+        } catch (e: Exception) {
+            // leave the list empty if loading fails
+        }
+    }
+
+    val filteredCampsites = remember(campsites, searchQuery, filter) {
+        campsites.filter { it.matchesSearch(searchQuery) && it.matchesFilter(filter) }
     }
 
     Column(
@@ -143,7 +156,7 @@ fun CampsiteListScreen(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
-                            .clickable { navController.navigate("campsite_detail") }
+                            .clickable { navController.navigate("campsite_detail/${campsite.id}") }
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(text = campsite.name, fontSize = 18.sp)
@@ -165,12 +178,17 @@ fun CampsiteListScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { navController.navigate("campsite_detail") },
+            onClick = {
+                filteredCampsites.firstOrNull()?.let {
+                    navController.navigate("campsite_detail/${it.id}")
+                }
+            },
             modifier = Modifier.testTag("viewDetailsButton")
         ) {
             Text("View Campsite Details")
         }
-    }
+        }
+
 
     if (showFilterDialog) {
         FilterDialog(

@@ -18,7 +18,7 @@ import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import com.google.firebase.firestore.SetOptions
 
-private val DEFAULT_DATE = LocalDate.of(1970, 1, 1)
+private val DEFAULT_DATE = LocalDate.of(1970,  1, 1)
 
 /** Reads and writes app data in Firestore. */
 class DatabaseController {
@@ -240,22 +240,27 @@ class DatabaseController {
         val campsiteRef = campsites.document(campsiteId)
         val ratingsRef = campsiteRef.collection("ratings")
 
+        //saves the user rating just overriting it
         ratingsRef.document(userId)
             .set(mapOf("userId" to userId, "rating" to rating, "ratedAt" to FieldValue.serverTimestamp()))
             .await()
 
+        //gets all the ratings and average  plus rounds to one decimal place
         val all = ratingsRef.get().await().documents.mapNotNull { it.getLong("rating") }
         val average = Math.round(all.average() * 10) / 10.0
 
+        //saves new average
         campsiteRef.set(mapOf("rating" to average), SetOptions.merge()).await()
         return average
     }
 
+    //checks if user is in lotter by searching through database from user id in the database and returns true if its there
     suspend fun isUserInLottery(campsiteId: String, userId: String): Boolean =
         campsites.document(campsiteId)
             .collection("lottery").document(userId)
             .get().await().exists()
 
+    //joins lottery saving user id,stores time and users
     suspend fun joinLottery(campsiteId: String, userId: String) {
         campsites.document(campsiteId)
             .collection("lottery").document(userId)
@@ -263,6 +268,7 @@ class DatabaseController {
             .await()
     }
 
+    //leaves lottery by deleting users id
     suspend fun leaveLottery(campsiteId: String, userId: String) {
         campsites.document(campsiteId)
             .collection("lottery").document(userId)
