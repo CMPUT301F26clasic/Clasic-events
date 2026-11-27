@@ -55,6 +55,12 @@ fun MyCampsitesScreen(navController: NavController) {
         ) {
             Text("Register a campsite")
         }
+        Button(
+            onClick = { navController.navigate("shared_lottery") },
+            modifier = Modifier.fillMaxWidth().testTag("createSharedLotteryNavButton"),
+        ) {
+            Text("Create a shared lottery")
+        }
 
         when {
             viewModel.loading && viewModel.campsites.isEmpty() -> Text("Loading...")

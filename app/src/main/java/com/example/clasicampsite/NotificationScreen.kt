@@ -51,16 +51,6 @@ fun NotificationScreen(
             isLoading = false
         }
     }
-    Column(
-        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(16.dp)
-    ) {
-        Button(
-            onClick = { navController.popBackStack() },
-            modifier = Modifier.testTag("backButton") // back button
-        ) {
-            Text("Back")
-        }
-    }
 
     Column(
         modifier = Modifier.fillMaxSize().statusBarsPadding().padding(16.dp),

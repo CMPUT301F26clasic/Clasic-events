@@ -1,3 +1,9 @@
+/*
+Purpose: Lets a campsite owner set the number of lottery winners, view the waitlist,
+and draw/notify entrants (US 02.04.05, US 02.09.01, #5).
+Outstanding issues: None.
+ */
+
 package com.example.clasicampsite
 
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +40,7 @@ import com.example.clasicampsite.data.DatabaseController
 import kotlinx.coroutines.launch
 
 //  The following ui and function layouts are from, ChatGPT "Provide a layout for my lotterymanagementscreen", 2026-11-06
+/** Screen where a campsite owner manages lottery winner count and notifies entrants. */
 @Composable
 fun LotteryManagementScreen(
     navController: NavController,

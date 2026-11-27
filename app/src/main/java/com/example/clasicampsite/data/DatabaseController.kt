@@ -7,6 +7,7 @@ people booking at the exact same moment could still both succeed (needs a transa
 package com.example.clasicampsite.data
 
 import com.example.clasicampsite.model.Campsite
+import com.example.clasicampsite.model.CampsiteReview
 import com.example.clasicampsite.model.Lottery
 import com.example.clasicampsite.model.LotteryEntrant
 import com.example.clasicampsite.model.Reservation
@@ -304,6 +305,71 @@ class DatabaseController {
 
         campsiteRef.set(mapOf("rating" to average), SetOptions.merge()).await()
         return average
+    }
+
+    /** Creates a shared [lottery] covering multiple campsites (#69) */
+    suspend fun createSharedLottery(lottery: Lottery): String {
+        require(lottery.campsiteIds.distinct().size >= 2) {
+            "A shared lottery must include at least two campsites."
+        }
+        val cleanLottery = lottery.copy(campsiteIds = lottery.campsiteIds.distinct())
+        saveLottery(cleanLottery)
+        return cleanLottery.id
+    }
+
+    /** Fetches all lotteries that include [campsiteId] */
+    suspend fun getLotteriesForCampsite(campsiteId: String): List<Lottery> {
+        val snapshot = lotteries.whereArrayContains("campsiteIds", campsiteId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Lottery::class.java)?.apply { id = doc.id }
+        }
+    }
+
+    /** Fetches every rating/review across all campsites for admin moderation (#71) */
+    suspend fun getAllCampsiteReviews(): List<CampsiteReview> {
+        val allSites = campsites.get().await()
+        val results = mutableListOf<CampsiteReview>()
+
+        for (siteDoc in allSites.documents) {
+            val siteName = siteDoc.getString("name") ?: ""
+            val ratingsSnapshot = siteDoc.reference.collection("ratings").get().await()
+            for (ratingDoc in ratingsSnapshot.documents) {
+                val stars = ratingDoc.getLong("rating")?.toInt() ?: 0
+                val userId = ratingDoc.getString("userId") ?: ratingDoc.id
+                val comment = ratingDoc.getString("comment")
+                    ?: ratingDoc.getString("review")
+                    ?: ""
+                results.add(
+                    CampsiteReview(
+                        id = ratingDoc.id,
+                        campsiteId = siteDoc.id,
+                        campsiteName = siteName,
+                        userId = userId,
+                        rating = stars,
+                        comment = comment,
+                    )
+                )
+            }
+        }
+        return results
+    }
+
+    /** Deletes a review by [userId] on [campsiteId] and recalculates the campsite's average rating (#71) */
+    suspend fun deleteCampsiteReview(campsiteId: String, userId: String): Double {
+        val campsiteRef = campsites.document(campsiteId)
+        val ratingsRef = campsiteRef.collection("ratings")
+
+        ratingsRef.document(userId).delete().await()
+
+        val remaining = ratingsRef.get().await().documents.mapNotNull { it.getLong("rating") }
+        val newAverage = if (remaining.isEmpty()) {
+            0.0
+        } else {
+            Math.round(remaining.average() * 10) / 10.0
+        }
+
+        campsiteRef.set(mapOf("rating" to newAverage), SetOptions.merge()).await()
+        return newAverage
     }
 
     suspend fun isUserInLottery(campsiteId: String, userId: String): Boolean =

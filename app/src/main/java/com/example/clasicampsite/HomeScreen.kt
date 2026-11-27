@@ -1,4 +1,11 @@
+/*
+Purpose: The app's home screen with navigation buttons to campsites, reservations,
+notifications, profile, owner campsites, and admin moderation screens.
+Outstanding issues: None.
+ */
+
 package com.example.clasicampsite
+
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 
+// THE MAIN HOME SCREEN OF clasiCampsiteAp //
 @Composable
 fun HomeScreen(navController: NavController) {
     // check whether this device is an admin each time Home is shown (US 03.11.01)
@@ -108,6 +116,15 @@ fun HomeScreen(navController: NavController) {
                 modifier = Modifier.testTag("adminImagesButton")
             ) {
                 Text("Admin: All images")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = { navController.navigate("admin_reviews") },
+                modifier = Modifier.testTag("adminReviewsButton")
+            ) {
+                Text("Admin: All reviews")
             }
         }
 
