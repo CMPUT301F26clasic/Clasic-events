@@ -53,7 +53,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 notificationsEnabled = user.notificationsEnabled
                 profileImage = user.profileImage
                 admin = user.admin
-                ColorBlindMode.enabled = user.colorBlindMode
+                ColorBlindMode.mode = user.colorMode
             } catch (e: Exception) {
                 message = "Couldn't load your profile"
             }
@@ -71,7 +71,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             notificationsEnabled = notificationsEnabled,
             profileImage = profileImage,
             admin = admin,
-            colorBlindMode = ColorBlindMode.enabled,
+            colorMode = ColorBlindMode.mode,
         )
         val error = user.errorMessage()
         if (error != null) {
