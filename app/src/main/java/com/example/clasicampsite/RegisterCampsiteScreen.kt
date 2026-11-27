@@ -63,7 +63,6 @@ fun RegisterCampsiteScreen(navController: NavController) {
     val database = remember { DatabaseController() }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val ownerId = remember { AdminAccess.deviceId(context) }
 
     /** Form fields */

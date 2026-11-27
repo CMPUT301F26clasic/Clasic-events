@@ -278,22 +278,19 @@ fun CampsiteDetailScreen(
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.testTag("campsiteRating")
                             )
-                            if(site.ownerId == userId){
-                                // Manage Lottery Button
-                                Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
 
-                            /** Manage Lottery button, only for the campsite's owner */
-                            if (site.ownerId.isNotBlank() && site.ownerId == userId) {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Button(
-                                    onClick = {
-                                        navController.navigate("manage_lottery/${site.id}")
-                                    },
-                                    modifier = Modifier.testTag("manageLotteryButton")
-                                ) {
-                                    Text("Manage Lottery")
-                                }
-                            }
+                    /** Manage Lottery button, only for the campsite's owner */
+                    if (site.ownerId.isNotBlank() && site.ownerId == userId) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                navController.navigate("manage_lottery/${site.id}")
+                            },
+                            modifier = Modifier.testTag("manageLotteryButton")
+                        ) {
+                            Text("Manage Lottery")
                         }
                     }
                 }
