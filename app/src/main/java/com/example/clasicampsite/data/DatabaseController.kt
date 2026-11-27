@@ -1,8 +1,8 @@
-/*
-Purpose: Saves, loads and deletes the app's data in Firebase Firestore. Each part of the app
-adds the functions for its own data here.
-Outstanding issues: Booking checks that dates are still free right before saving, but two
-people booking at the exact same moment could still both succeed (needs a transaction).
+/**
+ * Purpose: Saves, loads and deletes the app's data in Firebase Firestore. Each part of the app
+ * adds the functions for its own data here.
+ * Outstanding issues: Booking checks that dates are still free right before saving, but two
+ * people booking at the exact same moment could still both succeed (needs a transaction).
  */
 package com.example.clasicampsite.data
 
@@ -183,11 +183,43 @@ class DatabaseController {
         return document.toObject(Reservation::class.java)?.apply { id = document.id }
     }
 
+    /**
+     * Fetches every reservation made by one user (US 01.06.01, US 01.06.02).
+     *
+     * @param userId the user's device ID
+     * @return all of that user's reservations, with their IDs filled in
+     */
+    suspend fun getReservationsForUser(userId: String): List<Reservation> {
+        val snapshot = reservations.whereEqualTo("userId", userId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Reservation::class.java)?.apply { id = doc.id }
+        }
+    }
+
     /** Saves a new [reservation] and gives it an ID (US 01.04.02) */
     suspend fun saveReservation(reservation: Reservation) {
         val docRef = if (reservation.id.isBlank()) reservations.document() else reservations.document(reservation.id)
         reservation.id = docRef.id
         docRef.set(reservation).await()
+    }
+
+    /**
+     * Marks a reservation as cancelled, which frees its dates for other winners (US 01.07.01).
+     *
+     * @param reservationId the Firestore ID of the reservation to cancel
+     */
+    suspend fun cancelReservation(reservationId: String) {
+        reservations.document(reservationId).update("status", "cancelled").await()
+    }
+
+    /**
+     * Marks a reservation as rejected by the campsite owner, which frees its dates for other
+     * winners (US 02.08.01).
+     *
+     * @param reservationId the Firestore ID of the reservation to reject
+     */
+    suspend fun rejectReservation(reservationId: String) {
+        reservations.document(reservationId).update("status", "rejected").await()
     }
 
     /** Sends [message] to the user with [deviceId] as an in-app notification (US 01.05.01) */

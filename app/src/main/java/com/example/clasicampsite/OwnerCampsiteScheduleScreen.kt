@@ -1,7 +1,8 @@
-/*
+/**
  * Purpose: Lets a campsite owner view currently booked dates (#25) and filter
- * past, active, and cancelled reservations (#26) for one of their campsites.
- * Outstanding issues: None right now.
+ * past, active, and cancelled reservations (#26) for one of their campsites, and reject an
+ * upcoming reservation (US 02.08.01). Rejecting frees the dates and notifies the camper.
+ * Outstanding issues: Rejected reservations are listed under the Cancelled filter.
  */
 package com.example.clasicampsite
 
@@ -16,17 +17,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,8 +44,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Reservation
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
+/** The filter chips shown above the reservation list (#26). */
 private enum class ReservationFilter(val label: String) {
     ALL("All"),
     ACTIVE("Active"),
@@ -46,19 +55,41 @@ private enum class ReservationFilter(val label: String) {
     CANCELLED("Cancelled"),
 }
 
-/** Shows booked dates and reservation history for [campsiteId]. */
+/**
+ * Returns the booked nights from [today] on, with no repeats, in order (#25).
+ *
+ * @param reservations every reservation for the campsite
+ * @param today today's date, like "2027-05-07"
+ * @return the nights taken by active reservations
+ */
+private fun upcomingBookedDates(reservations: List<Reservation>, today: String): List<String> =
+    Reservation.bookedDates(reservations).filter { it >= today }.distinct().sorted()
+
+/**
+ * Shows booked dates and reservation history for [campsiteId], and lets the owner reject an
+ * upcoming reservation (US 02.08.01).
+ *
+ * @param navController used to go back to My Campsites
+ * @param campsiteId the Firestore ID of the campsite whose bookings are shown
+ * @param dbController where the campsite and reservations are loaded from and saved
+ */
 @Composable
 fun OwnerCampsiteScheduleScreen(
     navController: NavController,
     campsiteId: String,
     dbController: DatabaseController = remember { DatabaseController() },
 ) {
+    val scope = rememberCoroutineScope()
+
     var campsiteName by remember { mutableStateOf("") }
     var reservations by remember { mutableStateOf<List<Reservation>>(emptyList()) }
     var bookedDates by remember { mutableStateOf<List<String>>(emptyList()) }
     var selectedFilter by remember { mutableStateOf(ReservationFilter.ALL) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var reservationToReject by remember { mutableStateOf<Reservation?>(null) }
+    var rejectReason by remember { mutableStateOf("") }
+    var rejectMessage by remember { mutableStateOf<String?>(null) }
 
     val todayStr = remember { LocalDate.now().toString() }
 
@@ -72,10 +103,7 @@ fun OwnerCampsiteScheduleScreen(
 
             val loaded = dbController.getReservationsForCampsite(campsiteId)
             reservations = loaded
-            bookedDates = Reservation.bookedDates(loaded)
-                .filter { it >= todayStr }
-                .distinct()
-                .sorted()
+            bookedDates = upcomingBookedDates(loaded, todayStr)
         } catch (e: Exception) {
             errorMessage = "Failed to load schedule: ${e.localizedMessage}"
         } finally {
@@ -87,10 +115,10 @@ fun OwnerCampsiteScheduleScreen(
         reservations.filter { res ->
             when (selectedFilter) {
                 ReservationFilter.ALL -> true
-                ReservationFilter.CANCELLED -> res.status.equals("cancelled", ignoreCase = true)
-                ReservationFilter.PAST -> !res.status.equals("cancelled", ignoreCase = true) &&
+                ReservationFilter.CANCELLED -> res.isCancelledOrRejected()
+                ReservationFilter.PAST -> !res.isCancelledOrRejected() &&
                         res.dates.maxOrNull()?.let { it < todayStr } == true
-                ReservationFilter.ACTIVE -> !res.status.equals("cancelled", ignoreCase = true) &&
+                ReservationFilter.ACTIVE -> !res.isCancelledOrRejected() &&
                         res.dates.maxOrNull()?.let { it >= todayStr } != false
             }
         }
@@ -134,7 +162,6 @@ fun OwnerCampsiteScheduleScreen(
             }
 
             else -> {
-                // #25: Currently booked dates (active reservations from today onward)
                 Text(
                     text = "Currently Booked Dates",
                     style = MaterialTheme.typography.titleMedium,
@@ -156,7 +183,6 @@ fun OwnerCampsiteScheduleScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // #26: Filter chips for past, active, and cancelled reservations
                 Text(
                     text = "Reservations",
                     style = MaterialTheme.typography.titleMedium,
@@ -176,6 +202,10 @@ fun OwnerCampsiteScheduleScreen(
                     }
                 }
 
+                rejectMessage?.let { message ->
+                    Text(message, modifier = Modifier.testTag("rejectMessage"))
+                }
+
                 if (filteredReservations.isEmpty()) {
                     Text(
                         text = "No ${selectedFilter.label.lowercase()} reservations.",
@@ -187,9 +217,10 @@ fun OwnerCampsiteScheduleScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(filteredReservations, key = { it.id.ifBlank { it.hashCode().toString() } }) { res ->
-                            val isPast = !res.status.equals("cancelled", ignoreCase = true) &&
+                            val isPast = !res.isCancelledOrRejected() &&
                                     res.dates.maxOrNull()?.let { it < todayStr } == true
                             val displayStatus = when {
+                                res.status.equals("rejected", ignoreCase = true) -> "Rejected"
                                 res.status.equals("cancelled", ignoreCase = true) -> "Cancelled"
                                 isPast -> "Past"
                                 else -> "Active"
@@ -206,6 +237,20 @@ fun OwnerCampsiteScheduleScreen(
                                         text = "Guest ID: ${res.userId} · ${res.nights()} night(s)",
                                         style = MaterialTheme.typography.bodySmall,
                                     )
+                                    if (res.canReject(todayStr)) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                reservationToReject = res
+                                                rejectReason = ""
+                                            },
+                                            colors = ButtonDefaults.outlinedButtonColors(
+                                                contentColor = MaterialTheme.colorScheme.error,
+                                            ),
+                                            modifier = Modifier.padding(top = 8.dp).testTag("rejectButton_${res.id}"),
+                                        ) {
+                                            Text("Reject")
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -213,5 +258,55 @@ fun OwnerCampsiteScheduleScreen(
                 }
             }
         }
+    }
+
+    reservationToReject?.let { res ->
+        AlertDialog(
+            onDismissRequest = { reservationToReject = null },
+            title = { Text("Reject this reservation?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("${res.dates.sorted().joinToString(", ")}. The nights open up again and the camper is notified.")
+                    OutlinedTextField(
+                        value = rejectReason,
+                        onValueChange = { rejectReason = it },
+                        label = { Text("Reason (optional)") },
+                        modifier = Modifier.fillMaxWidth().testTag("rejectReasonField"),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val reason = rejectReason
+                        reservationToReject = null
+                        scope.launch {
+                            try {
+                                dbController.rejectReservation(res.id)
+                                val nowRejected = res.copy(status = "rejected")
+                                reservations = reservations.map { if (it.id == res.id) nowRejected else it }
+                                bookedDates = upcomingBookedDates(reservations, todayStr)
+                                rejectMessage = try {
+                                    dbController.sendNotification(res.userId, nowRejected.rejectionMessage(reason))
+                                    "Reservation rejected. The camper was notified."
+                                } catch (e: Exception) {
+                                    "Reservation rejected, but the notification could not be sent."
+                                }
+                            } catch (e: Exception) {
+                                rejectMessage = "Could not reject the reservation: ${e.localizedMessage}"
+                            }
+                        }
+                    },
+                    modifier = Modifier.testTag("confirmRejectButton"),
+                ) {
+                    Text("Reject reservation", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { reservationToReject = null }) {
+                    Text("Keep it")
+                }
+            },
+        )
     }
 }

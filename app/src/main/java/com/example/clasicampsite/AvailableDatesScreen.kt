@@ -1,9 +1,11 @@
-/*
-Purpose: Lets a lottery winner see the dates they can book (US 01.04.01), choose a campsite and
-dates when the lottery has more than one campsite (US 01.04.02), reserve them, or decline the
-reservation (US 01.04.03).
-Outstanding issues: Dates are shown as a list, not a calendar.
-*/
+/**
+ * Purpose: Lets a lottery winner see the dates they can book (US 01.04.01), choose a campsite and
+ * dates when the lottery has more than one campsite (US 01.04.02), reserve them, or decline the
+ * reservation (US 01.04.03). Before reserving, the winner has to confirm they read the campsite
+ * rules and policies (US 02.11.01).
+ * Outstanding issues: Dates are shown as a list, not a calendar. The rules are the same for every
+ * campsite, since owners can't write their own rules yet.
+ */
 package com.example.clasicampsite
 
 import android.provider.Settings
@@ -40,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -53,6 +56,26 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** The rules and policies a winner has to accept before reserving (US 02.11.01). */
+private val CAMPSITE_RULES = listOf(
+    "Check-in is after 2 PM and check-out is before 11 AM.",
+    "Quiet hours are from 10 PM to 7 AM.",
+    "Do not go over the campsite's maximum number of guests.",
+    "Keep food locked away from wildlife and pack out your garbage.",
+    "Fires only in the fire pit, and follow any fire bans.",
+    "Cancel in the app if you can't come, so someone else can have the spot.",
+)
+
+/**
+ * The Available Dates screen, where a lottery winner picks a campsite and dates and reserves
+ * them, or declines. Reserve only turns on once dates are picked and the rules box is ticked.
+ * Right before saving, the booked dates are loaded again in case someone else just took them,
+ * and the screen change after saving is done on the main thread.
+ *
+ * @param navController used to go back and to open the confirmation after reserving
+ * @param lotteryId the Firestore ID of the lottery the user won
+ * @param dbController where the lottery, campsites and reservations are loaded from and saved
+ */
 @Composable
 fun AvailableDatesScreen(
     navController: NavController,
@@ -75,8 +98,9 @@ fun AvailableDatesScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var bookingMessage by remember { mutableStateOf("") }
     var showDeclineDialog by remember { mutableStateOf(false) }
+    var acceptedRules by remember { mutableStateOf(false) }
+    var showRulesDialog by remember { mutableStateOf(false) }
 
-    // Load the lottery and the names of its campsites when the screen opens
     LaunchedEffect(lotteryId) {
         try {
             val loaded = dbController.getLottery(lotteryId)
@@ -88,7 +112,7 @@ fun AvailableDatesScreen(
                     try {
                         dbController.getCampsite(id)?.name ?: id
                     } catch (e: Exception) {
-                        id // show the ID if the campsite can't be loaded
+                        id
                     }
                 }
                 selectedCampsiteId = loaded.campsiteIds.firstOrNull() ?: ""
@@ -100,7 +124,6 @@ fun AvailableDatesScreen(
         }
     }
 
-    // Load the booked dates whenever a different campsite is picked
     LaunchedEffect(selectedCampsiteId) {
         if (selectedCampsiteId.isNotBlank()) {
             try {
@@ -136,7 +159,6 @@ fun AvailableDatesScreen(
             } else if (!currentLottery.isWinner(deviceId)) {
                 Text("You did not win this lottery.", modifier = Modifier.testTag("notWinnerText"))
             } else {
-                // US 01.04.02: pick a campsite when the lottery has more than one
                 if (currentLottery.hasMultipleCampsites()) {
                     Text("Pick a campsite", fontWeight = FontWeight.Bold)
                     currentLottery.campsiteIds.forEach { id ->
@@ -165,7 +187,6 @@ fun AvailableDatesScreen(
                     Text(campsiteNames[selectedCampsiteId] ?: selectedCampsiteId, fontWeight = FontWeight.Bold)
                 }
 
-                // US 01.04.01: the dates that are still free
                 Text("Pick your dates", fontWeight = FontWeight.Bold)
                 val dates = currentLottery.freeDates(today, bookedDates)
                 if (dates.isEmpty()) {
@@ -195,14 +216,31 @@ fun AvailableDatesScreen(
                 Text("${selectedDates.size} night(s) selected", modifier = Modifier.testTag("selectedCountText"))
                 Spacer(modifier = Modifier.height(8.dp))
 
+                Text(
+                    "Read the campsite rules and policies",
+                    color = MaterialTheme.colorScheme.primary,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable { showRulesDialog = true }.testTag("viewRulesLink")
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { acceptedRules = !acceptedRules }
+                        .testTag("acceptRulesCheckbox")
+                ) {
+                    Checkbox(checked = acceptedRules, onCheckedChange = null)
+                    Text("I have read and accept the campsite rules and policies")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Button(
-                    enabled = selectedDates.isNotEmpty() && !isSaving,
+                    enabled = Reservation.canReserve(selectedDates, acceptedRules) && !isSaving,
                     onClick = {
                         coroutineScope.launch {
                             try {
                                 isSaving = true
                                 bookingMessage = ""
-                                // Check again in case someone booked these dates while we were looking
                                 val latestBooked = Reservation.bookedDates(
                                     dbController.getReservationsForCampsite(selectedCampsiteId)
                                 )
@@ -223,7 +261,6 @@ fun AvailableDatesScreen(
                                         deviceId,
                                         "Your reservation at ${reservation.campsiteName} is confirmed for ${reservation.dates.joinToString(", ")}."
                                     )
-                                    // Changing screens has to happen on the main thread
                                     withContext(Dispatchers.Main) {
                                         navController.navigate("reservation_confirmation/${reservation.id}")
                                     }
@@ -240,7 +277,6 @@ fun AvailableDatesScreen(
                     Text(if (isSaving) "Reserving..." else "Reserve")
                 }
 
-                // US 01.04.03: decline the reservation
                 OutlinedButton(
                     onClick = { showDeclineDialog = true },
                     modifier = Modifier.fillMaxWidth().testTag("declineButton")
@@ -253,6 +289,40 @@ fun AvailableDatesScreen(
                 }
             }
         }
+    }
+
+    if (showRulesDialog) {
+        AlertDialog(
+            onDismissRequest = { showRulesDialog = false },
+            title = { Text("Campsite rules and policies") },
+            text = {
+                Column(modifier = Modifier.testTag("rulesText")) {
+                    CAMPSITE_RULES.forEach { rule -> Text("• $rule") }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showRulesDialog = false
+                        acceptedRules = true
+                    },
+                    modifier = Modifier.testTag("acceptRulesButton")
+                ) {
+                    Text("I accept")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showRulesDialog = false
+                        navController.navigate("policy")
+                    },
+                    modifier = Modifier.testTag("policyLink")
+                ) {
+                    Text("Full app policy")
+                }
+            }
+        )
     }
 
     if (showDeclineDialog) {
