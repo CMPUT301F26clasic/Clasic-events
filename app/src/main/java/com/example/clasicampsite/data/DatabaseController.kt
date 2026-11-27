@@ -244,7 +244,9 @@ class DatabaseController {
     }
 
     /** Sends [message] to the user with [deviceId] as an in-app notification (US 01.05.01) */
+    /** Sends [message] to the user with [deviceId] as an in-app notification if enabled (US 01.05.01, US 01.10.01) */
     suspend fun sendNotification(deviceId: String, message: String) {
+        if (!getUser(deviceId).notificationsEnabled) return
         val notification = hashMapOf(
             "userId" to deviceId,
             "message" to message,

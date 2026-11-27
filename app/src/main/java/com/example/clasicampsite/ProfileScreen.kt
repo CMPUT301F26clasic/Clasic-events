@@ -48,6 +48,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 /** Turns picture saved as Base64 text back into an image, or null if there is none. */
 fun decodePicture(text: String): ImageBitmap? {
@@ -73,7 +76,12 @@ fun ProfileScreen(navController: NavController) {
     val picture = remember(viewModel.profileImage) { decodePicture(viewModel.profileImage) }
 
     Column(
-        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Button(

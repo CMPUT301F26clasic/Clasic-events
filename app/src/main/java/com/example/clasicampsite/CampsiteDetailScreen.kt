@@ -44,6 +44,8 @@ import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Campsite
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 /** Shows details, lottery join/leave controls, and star rating picker for [campsiteId]. */
 @Composable
@@ -110,6 +112,7 @@ fun CampsiteDetailScreen(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         Button(
@@ -275,11 +278,13 @@ fun CampsiteDetailScreen(
                                 fontWeight = FontWeight.Medium,
                                 modifier = Modifier.testTag("campsiteRating")
                             )
+                            if(site.ownerId == userId){
+                                // Manage Lottery Button
+                                Spacer(modifier = Modifier.height(16.dp))
 
                             /** Manage Lottery button, only for the campsite's owner */
                             if (site.ownerId.isNotBlank() && site.ownerId == userId) {
                                 Spacer(modifier = Modifier.height(16.dp))
-
                                 Button(
                                     onClick = {
                                         navController.navigate("manage_lottery/${site.id}")

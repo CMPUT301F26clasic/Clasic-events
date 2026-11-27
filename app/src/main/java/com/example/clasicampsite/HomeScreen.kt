@@ -26,6 +26,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 /** THE MAIN HOME SCREEN OF clasiCampsiteAp */
 @Composable
@@ -38,7 +41,11 @@ fun HomeScreen(navController: NavController) {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -61,6 +68,7 @@ fun HomeScreen(navController: NavController) {
         ) {
             Text("Reservations")
         }
+        Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = { navController.navigate("notifications") },
