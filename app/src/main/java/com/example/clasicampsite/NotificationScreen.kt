@@ -5,6 +5,8 @@
  */
 package com.example.clasicampsite
 
+import android.provider.Settings
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,10 +42,19 @@ fun NotificationScreen(
     var notifications by remember { mutableStateOf<List<String>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(deviceId) {
+    // The app's "notifications" route doesn't pass an ID, so fall back to this phone's ID
+    // (the same ID the rest of the app uses to identify users, US 01.09.01).
+    val context = LocalContext.current
+    val userId = remember(deviceId) {
+        deviceId.ifBlank {
+            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: ""
+        }
+    }
+
+    LaunchedEffect(userId) {
         try {
             isLoading = true
-            val items = dbController.getNotificationsForUser(deviceId)
+            val items = dbController.getNotificationsForUser(userId)
             notifications = items.map { it.message }
         } catch (_: Exception) {
             notifications = emptyList()
