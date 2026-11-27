@@ -33,4 +33,17 @@ class AdminCampsitesViewModel : ViewModel() {
             loaded = true
         }
     }
+
+    /** Deletes [campsite] from Firestore and takes it off the list. */
+    fun removeCampsite(campsite: Campsite) {
+        viewModelScope.launch {
+            try {
+                database.deleteCampsite(campsite.id)
+                campsites = campsites.filter { it.id != campsite.id }
+                message = "Campsite removed"
+            } catch (e: Exception) {
+                message = "Couldn't remove campsite"
+            }
+        }
+    }
 }
