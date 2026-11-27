@@ -1,15 +1,15 @@
 /*
-Purpose: Intent tests for color blind mode. The Profile switch turns it on right
-away, and the setting is saved with the profile.
-Outstanding issues: Changes this emulator's saved profile, then turns color blind mode back off.
+Purpose: Intent tests for color blind mode (WOW factor). Picking a mode from the Profile
+dropdown changes it right away, and the mode is saved with the profile.
+Outstanding issues: Changes this emulator's saved profile, then sets it back to regular.
  */
 package com.example.clasicampsite
 
-import androidx.compose.ui.test.assertIsOff
-import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -20,12 +20,12 @@ import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.junit.After
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Tests colour blind mode by using the app. */
+/** Tests color blind mode by using the app. */
 @RunWith(AndroidJUnit4::class)
 class ColorBlindModeTest {
 
@@ -35,10 +35,10 @@ class ColorBlindModeTest {
     /** This emulator's device ID, the same one the app saves profiles under. */
     private fun deviceId(): String = AdminAccess.deviceId(composeRule.activity)
 
-    /** Sets this emulator's saved colour blind setting, keeping its other fields. */
-    private fun setSaved(value: Boolean) = runBlocking {
+    /** Sets this emulator's saved color blind mode, keeping its other fields. */
+    private fun setSaved(mode: String) = runBlocking {
         FirebaseFirestore.getInstance().collection("users").document(deviceId())
-            .set(mapOf("colorBlindMode" to value), SetOptions.merge()).await()
+            .set(mapOf("colorMode" to mode), SetOptions.merge()).await()
         Unit
     }
 
@@ -55,43 +55,51 @@ class ColorBlindModeTest {
         waitForText("Update info")
     }
 
-    /** Turns colour blind mode back off so other tests use the normal colours. */
+    /** Picks [mode] from the color blind dropdown. */
+    private fun pick(mode: String) {
+        composeRule.onNodeWithTag("colorModeButton").performClick()
+        composeRule.onNodeWithTag("colorMode_$mode").performClick()
+    }
+
+    /** Sets the mode back to regular so other tests use the normal colors. */
     @After
-    fun turnOff() {
-        setSaved(false)
-        ColorBlindMode.enabled = false
+    fun backToRegular() {
+        setSaved("regular")
+        ColorBlindMode.mode = "regular"
     }
 
-    /** The switch turns colour blind mode on right away. */
+    /** WOW factor: Profile starts on Regular, and every mode can be picked from the dropdown. */
     @Test
-    fun switchTurnsColorBlindModeOn() {
-        setSaved(false)
+    fun eachModeCanBePicked() {
+        setSaved("regular")
         openProfile()
-        composeRule.onNodeWithTag("colorBlindSwitch").assertIsOff()
-        composeRule.onNodeWithTag("colorBlindSwitch").performClick()
-        composeRule.onNodeWithTag("colorBlindSwitch").assertIsOn()
-        assertTrue(ColorBlindMode.enabled)
+        composeRule.onNodeWithText("Color blind mode: Regular").assertIsDisplayed()
+        for ((mode, label) in ColorBlindMode.options) {
+            pick(mode)
+            assertEquals(mode, ColorBlindMode.mode)
+            composeRule.onNodeWithText("Color blind mode: $label").assertIsDisplayed()
+        }
     }
 
-    /** Update info saves the setting, and it is still on when Profile is opened again. */
+    /** WOW factor: Update info saves the mode, and it is still picked when Profile is opened again. */
     @Test
-    fun settingIsSavedWithProfile() {
-        setSaved(false)
+    fun modeIsSavedWithProfile() {
+        setSaved("regular")
         openProfile()
         composeRule.onNodeWithTag("nameField").performTextClearance()
-        composeRule.onNodeWithTag("nameField").performTextInput("Colour Test")
+        composeRule.onNodeWithTag("nameField").performTextInput("Color Test")
         composeRule.onNodeWithTag("emailField").performTextClearance()
-        composeRule.onNodeWithTag("emailField").performTextInput("colour.test@ualberta.ca")
+        composeRule.onNodeWithTag("emailField").performTextInput("color.test@ualberta.ca")
         composeRule.onNodeWithTag("phoneField").performTextClearance()
-        composeRule.onNodeWithTag("colorBlindSwitch").performClick()
+        pick("tritanopia")
         composeRule.onNodeWithTag("saveButton").performClick()
         waitForText("Profile saved")
 
         val user = runBlocking { DatabaseController().getUser(deviceId()) }
-        assertTrue(user.colorBlindMode)
+        assertEquals("tritanopia", user.colorMode)
 
         composeRule.onNodeWithTag("backButton").performClick()
         openProfile()
-        composeRule.onNodeWithTag("colorBlindSwitch").assertIsOn()
+        composeRule.onNodeWithText("Color blind mode: Tritanopia (blue-blind)").assertIsDisplayed()
     }
 }
