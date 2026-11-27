@@ -7,8 +7,10 @@ package com.example.clasicampsite
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -53,6 +55,19 @@ fun MyCampsitesScreen(navController: NavController) {
         ) {
             Text("Register a campsite")
         }
+        Button(
+            onClick = { navController.navigate("shared_lottery") },
+            modifier = Modifier.fillMaxWidth().testTag("createSharedLotteryNavButton"),
+        ) {
+            Text("Create a shared lottery")
+        }
+        // US 02.10.02: every notification this owner has sent to their waitlists
+        Button(
+            onClick = { navController.navigate("sent_notifications") },
+            modifier = Modifier.fillMaxWidth().testTag("sentNotificationsButton"),
+        ) {
+            Text("Sent notifications")
+        }
 
         when {
             viewModel.loading && viewModel.campsites.isEmpty() -> Text("Loading...")
@@ -61,11 +76,16 @@ fun MyCampsitesScreen(navController: NavController) {
                 "You haven't registered any campsites yet.",
                 modifier = Modifier.testTag("noCampsitesText"),
             )
-            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            else -> LazyColumn(
+                modifier = Modifier.testTag("myCampsitesList"),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 items(viewModel.campsites, key = { it.id }) { campsite ->
-                    OwnerCampsiteRow(campsite) {
-                        navController.navigate("campsite_form/${campsite.id}")
-                    }
+                    OwnerCampsiteRow(
+                        campsite = campsite,
+                        onClick = { navController.navigate("campsite_form/${campsite.id}") },
+                        onViewSchedule = { navController.navigate("owner_schedule/${campsite.id}") },
+                    )
                 }
             }
         }
@@ -74,7 +94,11 @@ fun MyCampsitesScreen(navController: NavController) {
 
 /** One card in the list. Tapping it runs [onClick]. */
 @Composable
-private fun OwnerCampsiteRow(campsite: Campsite, onClick: () -> Unit) {
+private fun OwnerCampsiteRow(
+    campsite: Campsite,
+    onClick: () -> Unit,
+    onViewSchedule: () -> Unit,
+) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).testTag("myCampsiteItem"),
     ) {
@@ -85,6 +109,13 @@ private fun OwnerCampsiteRow(campsite: Campsite, onClick: () -> Unit) {
                 "Up to ${campsite.maxOccupancy} guests · $${campsite.pricePerNight}/night",
                 style = MaterialTheme.typography.bodySmall,
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = onViewSchedule,
+                modifier = Modifier.testTag("viewScheduleButton"),
+            ) {
+                Text("View Bookings & Reservations")
+            }
         }
     }
 }

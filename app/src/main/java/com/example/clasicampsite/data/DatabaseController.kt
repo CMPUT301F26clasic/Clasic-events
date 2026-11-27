@@ -1,15 +1,17 @@
-/*
-Purpose: Saves, loads and deletes the app's data in Firebase Firestore. Each part of the app
-adds the functions for its own data here.
-Outstanding issues: Booking checks that dates are still free right before saving, but two
-people booking at the exact same moment could still both succeed (needs a transaction).
+/**
+ * Purpose: Saves, loads and deletes the app's data in Firebase Firestore. Each part of the app
+ * adds the functions for its own data here.
+ * Outstanding issues: Booking checks that dates are still free right before saving, but two
+ * people booking at the exact same moment could still both succeed (needs a transaction).
  */
 package com.example.clasicampsite.data
 
 import com.example.clasicampsite.model.Campsite
+import com.example.clasicampsite.model.CampsiteReview
 import com.example.clasicampsite.model.Lottery
 import com.example.clasicampsite.model.LotteryEntrant
 import com.example.clasicampsite.model.Reservation
+import com.example.clasicampsite.model.SentNotification
 import com.example.clasicampsite.model.User
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -17,6 +19,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import com.google.firebase.firestore.SetOptions
+import com.example.clasicampsite.AdminAccess.deviceId
 
 private val DEFAULT_DATE = LocalDate.of(1970, 1, 1)
 
@@ -29,7 +32,7 @@ class DatabaseController {
     private val reservations = FirebaseFirestore.getInstance().collection("reservations")
     private val notifications = FirebaseFirestore.getInstance().collection("notifications")
 
-    private val lotteryEntrants = FirebaseFirestore.getInstance().collection("lottery_entrants")
+
 
     /** Returns user saved under [deviceId], or a new empty user if none is saved yet */
     suspend fun getUser(deviceId: String): User {
@@ -51,6 +54,19 @@ class DatabaseController {
     /** Deletes the user saved under [deviceId] */
     suspend fun deleteUser(deviceId: String) {
         users.document(deviceId).delete().await()
+    }
+
+    /** Deletes every campsite owned by [ownerId] (US 03.07.01) */
+    suspend fun deleteCampsitesByOwner(ownerId: String) {
+        val snapshot = campsites.whereEqualTo("ownerId", ownerId).get().await()
+        for (document in snapshot.documents) {
+            document.reference.delete().await()
+        }
+    }
+
+    /** Removes the profile picture of the user saved under [deviceId], keeping their profile (US 03.03.01) */
+    suspend fun removeProfileImage(deviceId: String) {
+        users.document(deviceId).update("profileImage", "").await()
     }
 
     /** Fetches a single campsite by its [campsiteId] from Firestore */
@@ -98,6 +114,9 @@ class DatabaseController {
             "maxOccupancy" to campsite.maxOccupancy,
             "pricePerNight" to campsite.pricePerNight,
             "tags" to campsite.tags,
+            "image" to campsite.image,
+            "latitude" to campsite.latitude,
+            "longitude" to campsite.longitude,
             "rating" to campsite.rating,
             "numberOfWinners" to campsite.numberOfWinners,
             "availableFrom" to campsite.availableFrom.toString(),
@@ -122,6 +141,9 @@ class DatabaseController {
         maxOccupancy = getLong("maxOccupancy")?.toInt() ?: 0,
         pricePerNight = getDouble("pricePerNight") ?: 0.0,
         tags = (get("tags") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+        image = getString("image") ?: "",
+        latitude = getDouble("latitude"),
+        longitude = getDouble("longitude"),
         rating = getDouble("rating") ?: 0.0,
         numberOfWinners = getLong("numberOfWinners")?.toInt() ?: 0,
         availableFrom = runCatching { LocalDate.parse(getString("availableFrom")) }
@@ -162,11 +184,43 @@ class DatabaseController {
         return document.toObject(Reservation::class.java)?.apply { id = document.id }
     }
 
+    /**
+     * Fetches every reservation made by one user (US 01.06.01, US 01.06.02).
+     *
+     * @param userId the user's device ID
+     * @return all of that user's reservations, with their IDs filled in
+     */
+    suspend fun getReservationsForUser(userId: String): List<Reservation> {
+        val snapshot = reservations.whereEqualTo("userId", userId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Reservation::class.java)?.apply { id = doc.id }
+        }
+    }
+
     /** Saves a new [reservation] and gives it an ID (US 01.04.02) */
     suspend fun saveReservation(reservation: Reservation) {
         val docRef = if (reservation.id.isBlank()) reservations.document() else reservations.document(reservation.id)
         reservation.id = docRef.id
         docRef.set(reservation).await()
+    }
+
+    /**
+     * Marks a reservation as cancelled, which frees its dates for other winners (US 01.07.01).
+     *
+     * @param reservationId the Firestore ID of the reservation to cancel
+     */
+    suspend fun cancelReservation(reservationId: String) {
+        reservations.document(reservationId).update("status", "cancelled").await()
+    }
+
+    /**
+     * Marks a reservation as rejected by the campsite owner, which frees its dates for other
+     * winners (US 02.08.01).
+     *
+     * @param reservationId the Firestore ID of the reservation to reject
+     */
+    suspend fun rejectReservation(reservationId: String) {
+        reservations.document(reservationId).update("status", "rejected").await()
     }
 
     /** Sends [message] to the user with [deviceId] as an in-app notification (US 01.05.01) */
@@ -178,25 +232,99 @@ class DatabaseController {
         )
         notifications.add(notification).await()
     }
-
-    /** Fetches all entrants for a specific campsite lottery */
-    suspend fun getLotteryEntrants(campsiteId: String): List<LotteryEntrant> {
-        val snapshot = lotteryEntrants.whereEqualTo("campsiteId", campsiteId).get().await()
+    /** Fetches in-app notifications for [deviceId], newest first */
+    data class UserNotification(
+        val message: String = "",
+        val sentAt: Long = 0L,
+    )
+    suspend fun getNotificationsForUser(deviceId: String): List<UserNotification> {
+        val snapshot = notifications.whereEqualTo("userId", deviceId).get().await()
         return snapshot.documents.mapNotNull { doc ->
-            doc.toObject(LotteryEntrant::class.java)?.apply { id = doc.id }
+            val msg = doc.getString("message") ?: return@mapNotNull null
+            val time = doc.getLong("sentAt") ?: 0L
+            UserNotification(message = msg, sentAt = time)
+        }.sortedByDescending { it.sentAt }
+    }
+
+    /**
+     * Sends [message] from the campsite owner [ownerId] to the user with [deviceId], and also
+     * saves who sent it and for which campsite, so sent notifications can be listed later
+     * (US 02.10.01, US 02.10.02). Entrants see it like any other notification.
+     */
+    suspend fun sendOwnerNotification(
+        deviceId: String,
+        message: String,
+        ownerId: String,
+        campsiteId: String,
+        sentAt: Long = System.currentTimeMillis(),
+    ) {
+        val notification = hashMapOf(
+            "userId" to deviceId,
+            "message" to message,
+            "sentAt" to sentAt,
+            "senderId" to ownerId,
+            "campsiteId" to campsiteId,
+        )
+        notifications.add(notification).await()
+    }
+
+    /**
+     * Fetches every notification the campsite owner [ownerId] sent with [sendOwnerNotification],
+     * one per entrant who got it (US 02.10.02).
+     */
+    suspend fun getNotificationsSentBy(ownerId: String): List<SentNotification> {
+        val snapshot = notifications.whereEqualTo("senderId", ownerId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            val text = doc.getString("message") ?: return@mapNotNull null
+            SentNotification(
+                userId = doc.getString("userId") ?: "",
+                message = text,
+                sentAt = doc.getLong("sentAt") ?: 0L,
+                campsiteId = doc.getString("campsiteId") ?: "",
+            )
         }
     }
 
-    /** Saves a lottery entrant */
-    suspend fun saveLotteryEntrant(entrant: LotteryEntrant) {
-        val docRef = if (entrant.id.isBlank()) {
-            lotteryEntrants.document()
-        } else {
-            lotteryEntrants.document(entrant.id)
+    /** Sends win/loss notifications to entrants based on [winnerUserIds] */
+    suspend fun sendLotteryOutcomeNotifications(
+        campsiteName: String,
+        entrantUserIds: List<String>,
+        winnerUserIds: List<String>,
+    ) {
+        val distinctEntrants = entrantUserIds.distinct()
+        val winnerSet = winnerUserIds.toSet()
+
+        for (userId in distinctEntrants) {
+            if (userId in winnerSet) {
+                sendNotification(
+                    deviceId = userId,
+                    message = "Congrats! You won the lottery for $campsiteName.",
+                )
+            } else {
+                sendNotification(
+                    deviceId = userId,
+                    message = "Sorry, you were not selected in the lottery for $campsiteName.",
+                )
+            }
         }
+    }
+
+    /** Fetches all entrants for a specific campsite lottery */
+    suspend fun getLotteryEntrants(campsiteId: String): List<LotteryEntrant> {
+        val snapshot = campsites.document(campsiteId).collection("lottery").get().await()
+
+        return snapshot.documents.map { doc ->
+            LotteryEntrant(id = doc.id, campsiteId = campsiteId, userId = doc.getString("userId") ?: doc.id)
+        }
+    }
+
+    /** Saves a lottery entrant under the campsite's lottery subcollection */
+    suspend fun saveLotteryEntrant(entrant: LotteryEntrant) {
+        val docRef = campsites.document(entrant.campsiteId).collection("lottery").document(entrant.userId)
+
+        docRef.set(mapOf("userId" to entrant.userId, "joinedAt" to FieldValue.serverTimestamp())).await()
 
         entrant.id = docRef.id
-        docRef.set(entrant).await()
     }
 
     /** Updates the number of winners for a campsite lottery */
@@ -251,16 +379,78 @@ class DatabaseController {
         return average
     }
 
+    /** Creates a shared [lottery] covering multiple campsites (#69) */
+    suspend fun createSharedLottery(lottery: Lottery): String {
+        require(lottery.campsiteIds.distinct().size >= 2) {
+            "A shared lottery must include at least two campsites."
+        }
+        val cleanLottery = lottery.copy(campsiteIds = lottery.campsiteIds.distinct())
+        saveLottery(cleanLottery)
+        return cleanLottery.id
+    }
+
+    /** Fetches all lotteries that include [campsiteId] */
+    suspend fun getLotteriesForCampsite(campsiteId: String): List<Lottery> {
+        val snapshot = lotteries.whereArrayContains("campsiteIds", campsiteId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Lottery::class.java)?.apply { id = doc.id }
+        }
+    }
+
+    /** Fetches every rating/review across all campsites for admin moderation (#71) */
+    suspend fun getAllCampsiteReviews(): List<CampsiteReview> {
+        val allSites = campsites.get().await()
+        val results = mutableListOf<CampsiteReview>()
+
+        for (siteDoc in allSites.documents) {
+            val siteName = siteDoc.getString("name") ?: ""
+            val ratingsSnapshot = siteDoc.reference.collection("ratings").get().await()
+            for (ratingDoc in ratingsSnapshot.documents) {
+                val stars = ratingDoc.getLong("rating")?.toInt() ?: 0
+                val userId = ratingDoc.getString("userId") ?: ratingDoc.id
+                val comment = ratingDoc.getString("comment")
+                    ?: ratingDoc.getString("review")
+                    ?: ""
+                results.add(
+                    CampsiteReview(
+                        id = ratingDoc.id,
+                        campsiteId = siteDoc.id,
+                        campsiteName = siteName,
+                        userId = userId,
+                        rating = stars,
+                        comment = comment,
+                    )
+                )
+            }
+        }
+        return results
+    }
+
+    /** Deletes a review by [userId] on [campsiteId] and recalculates the campsite's average rating (#71) */
+    suspend fun deleteCampsiteReview(campsiteId: String, userId: String): Double {
+        val campsiteRef = campsites.document(campsiteId)
+        val ratingsRef = campsiteRef.collection("ratings")
+
+        ratingsRef.document(userId).delete().await()
+
+        val remaining = ratingsRef.get().await().documents.mapNotNull { it.getLong("rating") }
+        val newAverage = if (remaining.isEmpty()) {
+            0.0
+        } else {
+            Math.round(remaining.average() * 10) / 10.0
+        }
+
+        campsiteRef.set(mapOf("rating" to newAverage), SetOptions.merge()).await()
+        return newAverage
+    }
+
     suspend fun isUserInLottery(campsiteId: String, userId: String): Boolean =
         campsites.document(campsiteId)
             .collection("lottery").document(userId)
             .get().await().exists()
 
     suspend fun joinLottery(campsiteId: String, userId: String) {
-        campsites.document(campsiteId)
-            .collection("lottery").document(userId)
-            .set(mapOf("userId" to userId, "joinedAt" to FieldValue.serverTimestamp()))
-            .await()
+        saveLotteryEntrant(LotteryEntrant(campsiteId = campsiteId, userId = userId))
     }
 
     suspend fun leaveLottery(campsiteId: String, userId: String) {

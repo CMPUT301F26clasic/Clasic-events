@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
@@ -68,21 +69,28 @@ class LotteryManagementScreenTest {
     @After
     fun deleteTestData(): Unit {
         runBlocking {
-            val entrants = firestore.collection("lottery_entrants")
-                .whereEqualTo("campsiteId", testCampsiteId).get().await()
+            val entrants = firestore.collection("campsites")
+                .document(testCampsiteId)
+                .collection("lottery")
+                .get()
+                .await()
 
             // Delete entrant documents and their associated test users.
             entrants.documents.forEach { entrant ->
-                val userId = entrant.getString("userId")
+                val userId = entrant.getString("userId") ?: entrant.id
 
                 entrant.reference.delete().await()
 
-                if (!userId.isNullOrBlank()) {
-                    firestore.collection("users").document(userId).delete().await()
-                }
+                firestore.collection("users")
+                    .document(userId)
+                    .delete()
+                    .await()
             }
 
-            firestore.collection("campsites").document(testCampsiteId).delete().await()
+            firestore.collection("campsites")
+                .document(testCampsiteId)
+                .delete()
+                .await()
         }
     }
 
@@ -107,7 +115,6 @@ class LotteryManagementScreenTest {
     private fun addTestEntrant(name: String): Unit {
         runBlocking {
             val userId = "lottery_test_user_${UUID.randomUUID()}"
-            val entrantId = "lottery_test_entrant_${UUID.randomUUID()}"
 
             // Create the user document.
             firestore.collection("users")
@@ -115,10 +122,11 @@ class LotteryManagementScreenTest {
                 .set(mapOf("id" to userId, "name" to name, "email" to "test@example.com")).await()
 
             // Associate the user with the test campsite's lottery.
-            firestore.collection("lottery_entrants")
-                .document(entrantId)
-                .set(mapOf("id" to entrantId, "campsiteId" to testCampsiteId, "userId" to userId))
-                .await()
+            firestore.collection("campsites")
+                .document(testCampsiteId)
+                .collection("lottery")
+                .document(userId)
+                .set(mapOf("userId" to userId, "joinedAt" to FieldValue.serverTimestamp())).await()
         }
     }
 

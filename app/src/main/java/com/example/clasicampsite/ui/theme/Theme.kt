@@ -31,13 +31,55 @@ private val LightColorScheme = lightColorScheme(
     onSurface = Color(0xFF1C1B1F)
 )
 
+// builds a color blind scheme on the same backgrounds as above. Only the button (primary)
+// and error colors change, picked so each type of color blindness can tell them apart.
+private fun colorBlindScheme(darkTheme: Boolean, primary: Color, error: Color) =
+    if (darkTheme) {
+        darkColorScheme(
+            primary = primary,
+            onPrimary = Color.Black,
+            secondary = primary,
+            tertiary = primary,
+            error = error,
+            background = Color(0xFF1C1B1F),
+            surface = Color(0xFF1C1B1F),
+            onBackground = Color.White,
+            onSurface = Color.White
+        )
+    } else {
+        lightColorScheme(
+            primary = primary,
+            onPrimary = Color.White,
+            secondary = primary,
+            tertiary = primary,
+            error = error,
+            background = Color.White,
+            surface = Color.White,
+            onBackground = Color(0xFF1C1B1F),
+            onSurface = Color(0xFF1C1B1F)
+        )
+    }
+
 @Composable
 fun ClasiCampsiteTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
+    colorMode: String = "regular", // color blind mode picked on the Profile screen
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
+        // red-blind people see reds as dark, so errors are orange instead
+        colorMode == "protanopia" ->
+            if (darkTheme) colorBlindScheme(true, ColorBlindSkyBlue, ColorBlindOrange)
+            else colorBlindScheme(false, ColorBlindBlue, ColorBlindAmber)
+        // for green-blind people, blue and orange-red are the easiest pair to tell apart
+        colorMode == "deuteranopia" ->
+            if (darkTheme) colorBlindScheme(true, ColorBlindSkyBlue, ColorBlindVermillion)
+            else colorBlindScheme(false, ColorBlindBlue, ColorBlindVermillion)
+        // blue-blind people mix up blue/green but see red well, so teal and red
+        colorMode == "tritanopia" ->
+            if (darkTheme) colorBlindScheme(true, TritanTealLight, TritanRedLight)
+            else colorBlindScheme(false, TritanTeal, TritanRed)
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)

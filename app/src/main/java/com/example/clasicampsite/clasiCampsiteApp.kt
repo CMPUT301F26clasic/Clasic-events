@@ -1,3 +1,8 @@
+/*
+Purpose: Root navigation graph connecting all screens in the clasiCampsite app.
+Outstanding issues: None.
+ */
+
 package com.example.clasicampsite
 
 import androidx.compose.runtime.Composable
@@ -22,8 +27,14 @@ fun clasiCampsiteApp() {
             val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
             CampsiteFormScreen(navController, campsiteId = campsiteId)
         }
+        composable("notify_waitlist/{campsiteId}") { backStackEntry ->
+            val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
+            NotifyWaitlistScreen(navController, campsiteId = campsiteId)
+        }
+        composable("sent_notifications") { SentNotificationsScreen(navController) }
         composable("admin_profiles") { AdminProfilesScreen(navController) }
         composable("admin_campsites") {AdminCampsitesScreen(navController)}
+        composable("admin_images") { AdminImagesScreen(navController) }
         composable("register_campsite") { RegisterCampsiteScreen(navController) }
 
         composable("campsite_detail/{campsiteId}") { backStackEntry ->
@@ -42,5 +53,11 @@ fun clasiCampsiteApp() {
             val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
             LotteryManagementScreen(navController = navController, campsiteId = campsiteId)
         }
+        composable("owner_schedule/{campsiteId}") { backStackEntry ->
+            val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
+            OwnerCampsiteScheduleScreen(navController = navController, campsiteId = campsiteId)
+        }
+        composable("shared_lottery") { SharedLotteryScreen(navController) }
+        composable("admin_reviews") { AdminReviewsScreen(navController) }
     }
 }
