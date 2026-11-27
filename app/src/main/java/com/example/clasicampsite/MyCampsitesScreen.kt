@@ -63,7 +63,10 @@ fun MyCampsitesScreen(navController: NavController) {
                 "You haven't registered any campsites yet.",
                 modifier = Modifier.testTag("noCampsitesText"),
             )
-            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            else -> LazyColumn(
+                modifier = Modifier.testTag("myCampsitesList"),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 items(viewModel.campsites, key = { it.id }) { campsite ->
                     OwnerCampsiteRow(
                         campsite = campsite,

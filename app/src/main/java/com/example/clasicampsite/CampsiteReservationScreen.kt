@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,7 +18,7 @@ import androidx.navigation.NavController
 fun CampSiteReservationScreen(navController: NavController) {
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp)
+        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(16.dp)
     ) {
         Button(
             onClick = { navController.popBackStack() },
