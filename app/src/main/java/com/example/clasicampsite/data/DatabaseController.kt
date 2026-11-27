@@ -443,6 +443,46 @@ class DatabaseController {
         }
     }
 
+    /** Fetches all shared lotteries that include any of [campsiteIds] (#69) */
+    suspend fun getSharedLotteriesForCampsites(campsiteIds: List<String>): List<Lottery> {
+        val found = mutableMapOf<String, Lottery>()
+        for (siteId in campsiteIds.distinct()) {
+            for (lottery in getLotteriesForCampsite(siteId)) {
+                if (lottery.hasMultipleCampsites()) {
+                    found[lottery.id] = lottery
+                }
+            }
+        }
+        return found.values.toList()
+    }
+
+    /** Draws up to [winnerCount] winners from all entrants across [lottery]'s campsites (#69) */
+    suspend fun drawSharedLotteryWinners(lottery: Lottery, winnerCount: Int): List<String> {
+        val entrantIds = lottery.campsiteIds
+            .flatMap { siteId -> getLotteryEntrants(siteId).map { it.userId } }
+            .filter { it.isNotBlank() }
+            .distinct()
+
+        val pickedWinners = entrantIds.shuffled().take(winnerCount.coerceAtLeast(1))
+        lotteries.document(lottery.id).update("winners", pickedWinners).await()
+
+        sendLotteryOutcomeNotifications(
+            campsiteName = lottery.title.ifBlank { "shared lottery" },
+            entrantUserIds = entrantIds,
+            winnerUserIds = pickedWinners,
+        )
+        return pickedWinners
+    }
+
+    /** Fetches all lotteries won by [deviceId] that they haven't declined yet (#69) */
+    suspend fun getWonLotteriesForUser(deviceId: String): List<Lottery> {
+        val snapshot = lotteries.whereArrayContains("winners", deviceId).get().await()
+        return snapshot.documents
+            .mapNotNull { doc -> doc.toObject(Lottery::class.java)?.apply { id = doc.id } }
+            .filter { it.isWinner(deviceId) }
+    }
+
+
     /** Fetches every rating/review across all campsites for admin moderation (#71) */
     suspend fun getAllCampsiteReviews(): List<CampsiteReview> {
         val allSites = campsites.get().await()

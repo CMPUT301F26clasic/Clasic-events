@@ -84,6 +84,7 @@ fun CampSiteReservationScreen(
     var reservationToCancel by remember { mutableStateOf<Reservation?>(null) }
     var cancelledReservation by remember { mutableStateOf<Reservation?>(null) }
 
+
     val csvLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv")
     ) { uri ->
@@ -103,6 +104,7 @@ fun CampSiteReservationScreen(
     LaunchedEffect(deviceId) {
         try {
             reservations = dbController.getReservationsForUser(deviceId)
+            wonLotteries = dbController.getWonLotteriesForUser(deviceId)
         } catch (e: Exception) {
             errorMessage = "Failed to load reservations: ${e.localizedMessage}"
         } finally {
@@ -160,6 +162,15 @@ fun CampSiteReservationScreen(
                 modifier = Modifier.fillMaxWidth().testTag("downloadCancelCsvButton")
             ) {
                 Text("Download cancellation as CSV")
+            }
+            wonLotteries.forEach { lottery ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { navController.navigate("available_dates/${lottery.id}") },
+                    modifier = Modifier.fillMaxWidth().testTag("wonLottery_${lottery.id}"),
+                ) {
+                    Text("Book Won Lottery: ${lottery.title}")
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
