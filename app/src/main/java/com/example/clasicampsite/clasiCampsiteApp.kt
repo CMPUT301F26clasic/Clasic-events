@@ -27,6 +27,10 @@ fun clasiCampsiteApp() {
             val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
             CampsiteFormScreen(navController, campsiteId = campsiteId)
         }
+        composable("notify_waitlist/{campsiteId}") { backStackEntry ->
+            val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
+            NotifyWaitlistScreen(navController, campsiteId = campsiteId)
+        }
         composable("admin_profiles") { AdminProfilesScreen(navController) }
         composable("admin_campsites") {AdminCampsitesScreen(navController)}
         composable("admin_images") { AdminImagesScreen(navController) }

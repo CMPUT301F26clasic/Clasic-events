@@ -213,6 +213,22 @@ class DatabaseController {
         }.sortedByDescending { it.sentAt }
     }
 
+    /**
+     * Sends [message] from the campsite owner [ownerId] to the user with [deviceId], and also
+     * saves who sent it and for which campsite, so sent notifications can be listed later
+     * (US 02.10.01, US 02.10.02). Entrants see it like any other notification.
+     */
+    suspend fun sendOwnerNotification(deviceId: String, message: String, ownerId: String, campsiteId: String) {
+        val notification = hashMapOf(
+            "userId" to deviceId,
+            "message" to message,
+            "sentAt" to System.currentTimeMillis(),
+            "senderId" to ownerId,
+            "campsiteId" to campsiteId,
+        )
+        notifications.add(notification).await()
+    }
+
     /** Sends win/loss notifications to entrants based on [winnerUserIds] */
     suspend fun sendLotteryOutcomeNotifications(
         campsiteName: String,

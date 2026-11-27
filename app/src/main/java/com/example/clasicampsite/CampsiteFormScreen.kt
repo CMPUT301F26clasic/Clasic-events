@@ -199,6 +199,13 @@ fun CampsiteFormScreen(navController: NavController, campsiteId: String = "") {
             ) {
                 Text("Edit")
             }
+            // US 02.10.01: send a notification to everyone on this campsite's waitlist
+            OutlinedButton(
+                onClick = { navController.navigate("notify_waitlist/$campsiteId") },
+                modifier = Modifier.fillMaxWidth().testTag("notifyWaitlistButton"),
+            ) {
+                Text("Notify waitlist")
+            }
         }
 
         Text(viewModel.message, modifier = Modifier.testTag("campsiteFormMessage"))
