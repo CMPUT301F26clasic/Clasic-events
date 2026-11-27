@@ -1,6 +1,6 @@
 /**
  * Purpose: A reservation a lottery winner makes, saved in the Firestore "reservations" collection.
- * Outstanding issues: Rejecting reservations is not done yet.
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite.model
 
@@ -63,6 +63,36 @@ data class Reservation(
      */
     fun cancellationMessage(): String =
         "Your reservation at $campsiteName for ${dates.sorted().joinToString(", ")} was cancelled."
+
+    /**
+     * Returns true if the campsite owner can still reject this reservation: it is active and
+     * hasn't ended yet (US 02.08.01).
+     *
+     * @param today today's date, written like "2027-05-07"
+     * @return true if the Reject button should be shown to the owner
+     */
+    fun canReject(today: String): Boolean = isUpcoming(today)
+
+    /**
+     * Returns true if this reservation was called off, either cancelled by the camper
+     * (US 01.07.01) or rejected by the owner (US 02.08.01).
+     *
+     * @return true if the status is "cancelled" or "rejected"
+     */
+    fun isCancelledOrRejected(): Boolean = status == "cancelled" || status == "rejected"
+
+    /**
+     * Returns the message sent to the camper when the owner rejects this reservation
+     * (US 02.08.01).
+     *
+     * @param reason the owner's reason, or "" if they didn't give one
+     * @return a sentence naming the campsite and dates, plus the reason if there is one
+     */
+    fun rejectionMessage(reason: String): String {
+        val message = "Your reservation at $campsiteName for ${dates.sorted().joinToString(", ")} " +
+            "was rejected by the campsite owner."
+        return if (reason.isBlank()) message else "$message Reason: ${reason.trim()}"
+    }
 
     /**
      * Returns this reservation as CSV text with a header row (US 01.05.02).

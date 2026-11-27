@@ -212,6 +212,16 @@ class DatabaseController {
         reservations.document(reservationId).update("status", "cancelled").await()
     }
 
+    /**
+     * Marks a reservation as rejected by the campsite owner, which frees its dates for other
+     * winners (US 02.08.01).
+     *
+     * @param reservationId the Firestore ID of the reservation to reject
+     */
+    suspend fun rejectReservation(reservationId: String) {
+        reservations.document(reservationId).update("status", "rejected").await()
+    }
+
     /** Sends [message] to the user with [deviceId] as an in-app notification (US 01.05.01) */
     suspend fun sendNotification(deviceId: String, message: String) {
         val notification = hashMapOf(

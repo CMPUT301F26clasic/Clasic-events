@@ -2,7 +2,8 @@
  * Purpose: Unit tests for Reservation: nights and booked dates (US 01.04.01, US 01.04.02),
  * the CSV download (US 01.05.02), and splitting reservations into active and past
  * (US 01.06.01, US 01.06.02), which reservations can be cancelled (US 01.07.01), and the
- * cancellation confirmation message and CSV (US 01.07.02).
+ * cancellation confirmation message and CSV (US 01.07.02), and the owner rejecting a
+ * reservation (US 02.08.01).
  * Outstanding issues: None.
  */
 
@@ -168,5 +169,59 @@ class ReservationTest {
     @Test
     fun cannotReserveWithNoDatesEvenIfRulesAccepted() {
         assertFalse(Reservation.canReserve(emptyList(), acceptedRules = true))
+    }
+
+    /** US 02.08.01: the owner can reject an upcoming active reservation */
+    @Test
+    fun upcomingReservationCanBeRejected() {
+        assertTrue(reservation.canReject("2027-05-01"))
+    }
+
+    /** US 02.08.01: a reservation that is already over can't be rejected */
+    @Test
+    fun finishedReservationCannotBeRejected() {
+        assertFalse(reservation.canReject("2027-06-01"))
+    }
+
+    /** US 02.08.01: a cancelled or already rejected reservation can't be rejected again */
+    @Test
+    fun cancelledOrRejectedReservationCannotBeRejected() {
+        assertFalse(reservation.copy(status = "cancelled").canReject("2027-05-01"))
+        assertFalse(reservation.copy(status = "rejected").canReject("2027-05-01"))
+    }
+
+    /** US 02.08.01: a rejected reservation is grouped with the cancelled ones */
+    @Test
+    fun rejectedReservationCountsAsCancelledOrRejected() {
+        assertTrue(reservation.copy(status = "rejected").isCancelledOrRejected())
+        assertTrue(reservation.copy(status = "cancelled").isCancelledOrRejected())
+        assertFalse(reservation.isCancelledOrRejected())
+    }
+
+    /** US 02.08.01: rejecting a reservation releases its dates for other winners */
+    @Test
+    fun rejectedReservationDoesNotBookDates() {
+        val rejected = reservation.copy(status = "rejected")
+        assertTrue(Reservation.bookedDates(listOf(rejected)).isEmpty())
+    }
+
+    /** US 02.08.01: the camper's notification names the campsite, dates and the reason */
+    @Test
+    fun rejectionMessageIncludesReason() {
+        assertEquals(
+            "Your reservation at Grande Cache Ridge for 2027-05-07, 2027-05-08 was rejected by " +
+                "the campsite owner. Reason: Site closed for repairs",
+            reservation.rejectionMessage("  Site closed for repairs "),
+        )
+    }
+
+    /** US 02.08.01: with no reason, the notification just says it was rejected */
+    @Test
+    fun rejectionMessageWithoutReason() {
+        assertEquals(
+            "Your reservation at Grande Cache Ridge for 2027-05-07, 2027-05-08 was rejected by " +
+                "the campsite owner.",
+            reservation.rejectionMessage(""),
+        )
     }
 }
