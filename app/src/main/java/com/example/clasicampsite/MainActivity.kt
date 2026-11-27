@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.LaunchedEffect // NEW
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.example.clasicampsite.ui.theme.ClasiCampsiteTheme
 
@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(Unit) {
                 ColorBlindMode.load(this@MainActivity)
             }
-            ClasiCampsiteTheme(colorBlind = ColorBlindMode.enabled) {
+            ClasiCampsiteTheme(colorMode = ColorBlindMode.mode) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

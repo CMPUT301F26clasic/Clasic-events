@@ -1,7 +1,9 @@
 /*
  * Purpose: The screen an owner uses to add a new campsite (US 02.01.01, 02.01.02),
- * look at one they already made (US 02.01.04), and change it (US 02.01.03).
- * Outstanding issues: No image upload or map location yet.
+ * look at one they already made (US 02.01.04), and change it (US 02.01.03), including
+ * an optional promo picture and map location.
+ * Outstanding issues: None known.\
+ * The photo picker code is based on ProfileScreen.kt.
  */
 package com.example.clasicampsite
 
@@ -29,6 +31,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.remember
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 /**
  * One screen for both adding and editing. If there's no [campsiteId] it's a blank
  * form for a new campsite, otherwise it loads that campsite and locks the fields until
@@ -38,6 +53,15 @@ import androidx.navigation.NavController
 fun CampsiteFormScreen(navController: NavController, campsiteId: String = "") {
     val viewModel: CampsiteFormViewModel = viewModel()
     LaunchedEffect(campsiteId) { viewModel.start(campsiteId) }
+    val context = LocalContext.current
+
+    // Opens Android's photo picker. When a photo is chosen, hand it to the ViewModel.
+    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) viewModel.setImage(uri)
+    }
+
+    // Turns the saved text back into a picture (decodePicture is in ProfileScreen.kt).
+    val picture = remember(viewModel.form.image) { decodePicture(viewModel.form.image) }
 
     val title = when {
         viewModel.isNew -> "Register Campsite"
@@ -87,6 +111,65 @@ fun CampsiteFormScreen(navController: NavController, campsiteId: String = "") {
         }
         FormField("Tags (comma separated)", form.tags, readOnly, "campsiteTagsField") {
             viewModel.form = form.copy(tags = it)
+        }
+
+        // Promo picture (optional, US 02.01.02)
+        if (picture != null) {
+            Image(
+                bitmap = picture,
+                contentDescription = "Campsite picture",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxWidth().height(180.dp).testTag("campsiteImage"),
+            )
+        }
+        if (viewModel.editing) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        pickImage.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    modifier = Modifier.testTag("pickCampsiteImageButton"),
+                ) {
+                    Text(if (picture == null) "Add picture" else "Change picture")
+                }
+                if (picture != null) {
+                    TextButton(
+                        onClick = { viewModel.removeImage() },
+                        modifier = Modifier.testTag("removeCampsiteImageButton"),
+                    ) {
+                        Text("Remove")
+                    }
+                }
+            }
+        }
+
+        // Map location (optional, US 02.01.02)
+        FormField("Latitude (optional)", form.latitude, readOnly, "campsiteLatitudeField") {
+            viewModel.form = form.copy(latitude = it)
+        }
+        FormField("Longitude (optional)", form.longitude, readOnly, "campsiteLongitudeField") {
+            viewModel.form = form.copy(longitude = it)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (viewModel.editing) {
+                OutlinedButton(
+                    onClick = { viewModel.findLocation() },
+                    modifier = Modifier.testTag("findLocationButton"),
+                ) {
+                    Text("Find from location")
+                }
+            }
+            val spot = form.mapLocation()
+            if (spot != null) {
+                OutlinedButton(
+                    onClick = { openMap(context, spot.first, spot.second) },
+                    modifier = Modifier.testTag("viewOnMapButton"),
+                ) {
+                    Text("View on map")
+                }
+            }
         }
 
         if (viewModel.editing) {
@@ -143,4 +226,13 @@ private fun FormField(
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         modifier = Modifier.fillMaxWidth().testTag(tag),
     )
+}
+/** Opens Google Maps (or the web browser) at [latitude], [longitude]. */
+private fun openMap(context: Context, latitude: Double, longitude: Double) {
+    val url = "https://www.google.com/maps/search/?api=1&query=$latitude,$longitude"
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    } catch (e: Exception) {
+        Toast.makeText(context, "No app can open maps", Toast.LENGTH_SHORT).show()
+    }
 }

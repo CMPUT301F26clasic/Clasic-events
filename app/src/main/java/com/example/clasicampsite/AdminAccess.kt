@@ -43,7 +43,7 @@ object AdminAccess {
      * or if the admin is viewing the app as a user.
      */
     suspend fun isAdmin(context: Context): Boolean {
-        if (viewAsUser) return false // NEW
+        if (viewAsUser) return false
         return try {
             DatabaseController().getUser(deviceId(context)).admin
         } catch (e: Exception) {

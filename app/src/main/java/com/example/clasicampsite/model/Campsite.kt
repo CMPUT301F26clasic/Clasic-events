@@ -21,6 +21,9 @@ import java.time.LocalDate
  * @property availableFrom Start date of availability
  * @property availableTo End date of availability
  * @property numberOfWinners How many entrants the lottery picks
+ * @property image Optional promo picture, shrunk and stored as Base64 text, or "" for none
+ * @property latitude Map location latitude, or null if the owner hasn't set one
+ * @property longitude Map location longitude, or null if the owner hasn't set one
  */
 data class Campsite(
     var id: String = "",
@@ -35,7 +38,10 @@ data class Campsite(
     var ownerId: String = "",
     var description: String = "",
     var pricePerNight: Double = 0.0,
-    var tags: List<String> = emptyList()
+    var tags: List<String> = emptyList(),
+    var image: String = "",
+    var latitude: Double? = null,
+    var longitude: Double? = null
 )
 
 data class CampsiteFilter(

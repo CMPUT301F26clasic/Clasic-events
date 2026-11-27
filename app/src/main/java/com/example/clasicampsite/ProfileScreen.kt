@@ -47,6 +47,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.MaterialTheme
 
 /** Turns picture saved as Base64 text back into an image, or null if there is none. */
 fun decodePicture(text: String): ImageBitmap? {
@@ -83,7 +84,7 @@ fun ProfileScreen(navController: NavController) {
         }
         Text("Profile", fontSize = 24.sp)
         Text("Device ID: ${viewModel.deviceId}")
-        // NEW: admins can switch between seeing the app as an admin or as a regular user
+        // admins can switch between seeing the app as an admin or as a regular user
         if (viewModel.admin) {
             Text("Admin", modifier = Modifier.testTag("adminLabel"))
             var menuOpen by remember { mutableStateOf(false) }
@@ -165,18 +166,27 @@ fun ProfileScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth().testTag("phoneField"),
             )
 
-            // color blind mode changes the colors right away, and is saved with Update info
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Switch(
-                    checked = ColorBlindMode.enabled,
-                    onCheckedChange = { ColorBlindMode.enabled = it },
-                    modifier = Modifier.testTag("colorBlindSwitch"),
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Colour blind mode")
+            // color blind mode dropdown, changes the colors right away and is saved with Update info
+            var colorMenuOpen by remember { mutableStateOf(false) }
+            Box {
+                Button(
+                    onClick = { colorMenuOpen = true },
+                    modifier = Modifier.testTag("colorModeButton"),
+                ) {
+                    Text("Color blind mode: ${ColorBlindMode.label()}")
+                }
+                DropdownMenu(expanded = colorMenuOpen, onDismissRequest = { colorMenuOpen = false }) {
+                    for ((value, label) in ColorBlindMode.options) {
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                ColorBlindMode.mode = value
+                                colorMenuOpen = false
+                            },
+                            modifier = Modifier.testTag("colorMode_$value"),
+                        )
+                    }
+                }
             }
 
             Row(
@@ -206,7 +216,11 @@ fun ProfileScreen(navController: NavController) {
                     Text("Update info")
                 }
             }
-            Text(viewModel.message)
+            Text(
+                viewModel.message,
+                color = if (viewModel.message == "Profile saved") MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.error,
+            )
 
             Button(
                 onClick = { showDeleteDialog = true },
