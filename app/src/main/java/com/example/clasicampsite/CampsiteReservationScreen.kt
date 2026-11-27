@@ -3,10 +3,10 @@
  * (US 01.06.01) and past ones that are over, cancelled or rejected (US 01.06.02). Tapping an
  * active reservation opens its confirmation, and active reservations can be cancelled (US 01.07.01).
  * After cancelling, the user gets a notification and can download the cancellation as a CSV
- * file (US 01.07.02).
- * Outstanding issues: The "My Lottery Win" button still opens the test lottery. It should be
- * replaced once the automatic draw (US 02.05.01) can send winners to their lottery. The
- * cancellation notification is sent even if the user turned notifications off.
+ * file (US 01.07.02). Lotteries the user won and hasn't booked yet are listed at the top, with a
+ * button to pick dates (US 01.04.01).
+ * Outstanding issues: The cancellation notification is sent even if the user turned
+ * notifications off, because it is the confirmation they asked for.
  */
 package com.example.clasicampsite
 
@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
+import com.example.clasicampsite.model.Lottery
 import com.example.clasicampsite.model.Reservation
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -58,9 +59,9 @@ import java.util.Locale
  * US 01.06.02). Tapping an active reservation opens its confirmation. Active reservations have
  * a Cancel button, which asks first because cancelling can't be undone, then updates the list
  * so the reservation moves to Past right away (US 01.07.01). After cancelling, a notification is
- * sent and a button lets the user save the cancellation as a CSV file (US 01.07.02). Until the
- * automatic draw is done,
- * the My Lottery Win button opens the test lottery so a winner can book.
+ * sent and a button lets the user save the cancellation as a CSV file (US 01.07.02). Lotteries
+ * this device won that it hasn't declined or booked yet are shown first, each with a Pick dates
+ * button (US 01.04.01).
  *
  * @param navController used to go back and to open other screens
  * @param dbController reads and writes reservations in Firestore
@@ -75,6 +76,7 @@ fun CampSiteReservationScreen(
     val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
     val coroutineScope = rememberCoroutineScope()
 
+    var wonLotteries by remember { mutableStateOf<List<Lottery>>(emptyList()) }
     var reservations by remember { mutableStateOf<List<Reservation>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -106,6 +108,12 @@ fun CampSiteReservationScreen(
         } finally {
             isLoading = false
         }
+        /** a failed lottery load shouldn't hide the reservations, so it has its own try */
+        try {
+            wonLotteries = dbController.getLotteriesWonBy(deviceId)
+        } catch (e: Exception) {
+            wonLotteries = emptyList()
+        }
     }
 
     val active = Reservation.activeReservations(reservations, today)
@@ -122,11 +130,22 @@ fun CampSiteReservationScreen(
         Text("My Reservations", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedButton(
-            onClick = { navController.navigate("available_dates/test-lottery") },
-            modifier = Modifier.fillMaxWidth().testTag("availableDatesButton")
-        ) {
-            Text("My Lottery Win")
+        /** lotteries this device won that still need dates picked */
+        val winsToBook = wonLotteries.filter {
+            it.isWinner(deviceId) && !Reservation.hasActiveReservationFor(reservations, it.id)
+        }
+        winsToBook.forEach { lottery ->
+            Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).testTag("lotteryWin_${lottery.id}")) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("You won: ${lottery.title}", fontWeight = FontWeight.Bold)
+                    OutlinedButton(
+                        onClick = { navController.navigate("available_dates/${lottery.id}") },
+                        modifier = Modifier.fillMaxWidth().testTag("pickDatesButton_${lottery.id}")
+                    ) {
+                        Text("Pick your dates")
+                    }
+                }
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
 

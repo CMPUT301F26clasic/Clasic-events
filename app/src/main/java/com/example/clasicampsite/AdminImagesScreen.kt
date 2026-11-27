@@ -1,8 +1,8 @@
-/*
-Purpose: The admin screen that shows every uploaded image and who uploaded it (US 03.06.01),
-and lets the admin remove one after confirming (US 03.03.01).
-Only admins can use it. Everyone else sees "Admins only" (US 03.11.01).
-Outstanding issues: None.
+/**
+ * Purpose: The admin screen that shows every uploaded image and who uploaded it (US 03.06.01),
+ * and lets the admin remove one after confirming (US 03.03.01).
+ * Only admins can use it. Everyone else sees "Admins only" (US 03.11.01).
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite
 
@@ -40,7 +40,7 @@ import com.example.clasicampsite.model.User
 /** The admin's list of every uploaded image. */
 @Composable
 fun AdminImagesScreen(navController: NavController) {
-    // only admins can see this screen. null = still checking with Firestore.
+    /** only admins can see this screen. null = still checking with Firestore. */
     val context = LocalContext.current
     var allowed by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) {

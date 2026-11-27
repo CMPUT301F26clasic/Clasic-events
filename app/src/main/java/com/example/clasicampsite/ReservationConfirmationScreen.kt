@@ -1,8 +1,8 @@
-/*
-Purpose: Shows the confirmation of a reservation (US 01.05.01) and lets the entrant download it
-as a CSV file (US 01.05.02).
-Outstanding issues: None.
-*/
+/**
+ * Purpose: Shows the confirmation of a reservation (US 01.05.01) and lets the entrant download it
+ * as a CSV file (US 01.05.02).
+ * Outstanding issues: None.
+ */
 package com.example.clasicampsite
 
 import android.widget.Toast
@@ -37,6 +37,13 @@ import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Reservation
 
+/**
+ * Confirms a new reservation and lets the user download it as a CSV (US 01.05.01).
+ *
+ * @param navController used to leave the screen
+ * @param reservationId the Firestore ID of the reservation to confirm
+ * @param dbController where the reservation is loaded from
+ */
 @Composable
 fun ReservationConfirmationScreen(
     navController: NavController,
@@ -49,7 +56,7 @@ fun ReservationConfirmationScreen(
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // US 01.05.02: lets the user pick where to save the CSV file
+    /** US 01.05.02: lets the user pick where to save the CSV file */
     val csvLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv")
     ) { uri ->

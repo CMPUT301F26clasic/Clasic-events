@@ -1,7 +1,7 @@
-/*
-Purpose: Holds what Profile screen shows and talks to database. Loads user for
-this device, saves their details, notification and color blind settings and deletes their profile
-Outstanding issues: None.
+/**
+ * Purpose: Holds what Profile screen shows and talks to database. Loads user for
+ * this device, saves their details, notification and color blind settings and deletes their profile
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite
 
@@ -39,7 +39,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     var message by mutableStateOf("")
     var loaded by mutableStateOf(false)
 
-    // Whether this user is an admin. Only shown, never edited here (set in Firebase).
+    /** Whether this user is an admin. Only shown, never edited here (set in Firebase). */
     var admin by mutableStateOf(false)
         private set
 

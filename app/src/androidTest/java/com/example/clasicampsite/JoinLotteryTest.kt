@@ -1,9 +1,9 @@
-/*
-Purpose: Intent tests for joining and leaving a campsite's lottery from the campsite details
-screen (#4).
-Outstanding issues: Uses the real Firestore database, so it needs internet. It saves one test
-campsite before each test and removes it (and this device's lottery entry) afterwards.
-*/
+/**
+ * Purpose: Intent tests for joining and leaving a campsite's lottery from the campsite details
+ * screen (#4).
+ * Outstanding issues: Uses the real Firestore database, so it needs internet. It saves one test
+ * campsite before each test and removes it (and this device's lottery entry) afterwards.
+ */
 package com.example.clasicampsite
 
 import android.provider.Settings
@@ -65,6 +65,7 @@ class JoinLotteryTest {
         db.deleteCampsite(testId)
     }
 
+    /** Shows the details screen for the test campsite. */
     private fun openDetails() {
         composeRule.setContent {
             val navController = rememberNavController()
@@ -79,7 +80,7 @@ class JoinLotteryTest {
         }
     }
 
-    /** Someone who hasn't joined sees a Join button and no Leave button. */
+    /** US 01.01.06: someone who hasn't joined sees a Join button and no Leave button. */
     @Test
     fun notJoinedShowsJoinButton() {
         openDetails()
@@ -88,7 +89,7 @@ class JoinLotteryTest {
         composeRule.onNodeWithTag("leaveLotteryButton").assertDoesNotExist()
     }
 
-    /** Tapping Join saves this device in the lottery, and the button changes to Leave. */
+    /** US 01.01.06: tapping Join saves this device in the lottery, and the button changes to Leave. */
     @Test
     fun joiningAddsYouToTheLottery() {
         openDetails()
@@ -100,7 +101,7 @@ class JoinLotteryTest {
         assertTrue(runBlocking { db.isUserInLottery(testId, deviceId) })
     }
 
-    /** Someone already in the lottery sees Leave; tapping it takes them out again. */
+    /** US 01.01.06: someone already in the lottery sees Leave; tapping it takes them out again. */
     @Test
     fun leavingTakesYouOutOfTheLottery() {
         runBlocking { db.joinLottery(testId, deviceId) }

@@ -1,8 +1,7 @@
-/*
-Purpose: Root navigation graph connecting all screens in the clasiCampsite app.
-Outstanding issues: None.
+/**
+ * Purpose: Root navigation graph connecting all screens in the clasiCampsite app.
+ * Outstanding issues: None.
  */
-
 package com.example.clasicampsite
 
 import androidx.compose.runtime.Composable
@@ -10,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 
+/** Sets up navigation between every screen of the app, starting at Home. */
 @Composable
 fun clasiCampsiteApp() {
     val navController = rememberNavController()

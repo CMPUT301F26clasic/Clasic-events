@@ -1,10 +1,9 @@
-package com.example.clasicampsite
-
-/*
+/**
  * Purpose: Unit and UI tests for sending and displaying campsite lottery
  * win and loss notifications (#5).
  * Outstanding issues: None right now.
  */
+package com.example.clasicampsite
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -16,11 +15,13 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 
+/** Tests the lottery win and loss notifications (US 01.03.01). */
 class LotteryNotificationsTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    /** US 01.03.01: winners get a won message and everyone else gets a not selected message */
     @Test
     fun sendLotteryOutcomeNotifications_sendsWinAndLossMessages() = runBlocking {
         val db = DatabaseController()
@@ -41,6 +42,7 @@ class LotteryNotificationsTest {
         assert(loserNotifs.any { it.message.contains("not selected", ignoreCase = true) && it.message.contains(testCampsiteName) })
     }
 
+    /** US 01.03.01: the notifications screen shows its title and a back button */
     @Test
     fun notificationScreen_displaysBackButtonAndTitle() {
         composeTestRule.setContent {

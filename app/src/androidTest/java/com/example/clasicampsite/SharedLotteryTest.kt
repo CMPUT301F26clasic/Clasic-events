@@ -1,7 +1,7 @@
-/*
-Purpose: Intent and database tests for listing multiple campsites together
-in a shared lottery (#69).
-Outstanding issues: Uses the real Firestore database, so it needs internet.
+/**
+ * Purpose: Intent and database tests for listing multiple campsites together
+ * in a shared lottery (#69).
+ * Outstanding issues: Uses the real Firestore database, so it needs internet.
  */
 package com.example.clasicampsite
 
@@ -83,13 +83,18 @@ class SharedLotteryTest {
         db.deleteCampsite(siteTwoId)
     }
 
+    /**
+     * Waits up to 10 seconds for [text] to appear, because Firestore takes time.
+     *
+     * @param text the text to wait for
+     */
     private fun waitForText(text: String) {
         composeRule.waitUntil(10_000) {
             composeRule.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty()
         }
     }
 
-    /** Selecting fewer than 2 campsites shows a validation error. */
+    /** US 02.04.08: selecting fewer than 2 campsites shows a validation error. */
     @Test
     fun requiresAtLeastTwoCampsites() {
         composeRule.setContent {
@@ -106,7 +111,7 @@ class SharedLotteryTest {
         composeRule.onNodeWithText("Please select at least 2 campsites.").assertIsDisplayed()
     }
 
-    /** Owner can select two campsites and save a shared lottery in Firestore. */
+    /** US 02.04.08: owner can select two campsites and save a shared lottery in Firestore. */
     @Test
     fun createsSharedLotteryForTwoCampsites() {
         composeRule.setContent {

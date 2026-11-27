@@ -1,7 +1,8 @@
-/*
+/**
  * Purpose: Shows all the campsites an owner has made (US 02.03.01) and has a button
  * to add a new one (US 02.01.01). Tap a campsite to see or edit it.
- * Outstanding issues: None right now. */
+ * Outstanding issues: None right now.
+ */
 package com.example.clasicampsite
 
 import androidx.compose.foundation.clickable
@@ -35,7 +36,7 @@ import com.example.clasicampsite.model.Campsite
 fun MyCampsitesScreen(navController: NavController) {
     val viewModel: MyCampsitesViewModel = viewModel()
 
-    // Runs each time the screen is shown, so a newly saved campsite appears.
+    /** Runs each time the screen is shown, so a newly saved campsite appears. */
     LaunchedEffect(Unit) { viewModel.load() }
 
     Column(
@@ -61,7 +62,7 @@ fun MyCampsitesScreen(navController: NavController) {
         ) {
             Text("Create a shared lottery")
         }
-        // US 02.10.02: every notification this owner has sent to their waitlists
+        /** US 02.10.02: every notification this owner has sent to their waitlists */
         Button(
             onClick = { navController.navigate("sent_notifications") },
             modifier = Modifier.fillMaxWidth().testTag("sentNotificationsButton"),
@@ -85,6 +86,7 @@ fun MyCampsitesScreen(navController: NavController) {
                         campsite = campsite,
                         onClick = { navController.navigate("campsite_form/${campsite.id}") },
                         onViewSchedule = { navController.navigate("owner_schedule/${campsite.id}") },
+                        onManageLottery = { navController.navigate("manage_lottery/${campsite.id}") },
                     )
                 }
             }
@@ -92,12 +94,20 @@ fun MyCampsitesScreen(navController: NavController) {
     }
 }
 
-/** One card in the list. Tapping it runs [onClick]. */
+/**
+ * One card in the list. Tapping it runs [onClick].
+ *
+ * @param campsite the campsite shown on the card
+ * @param onClick opens the campsite to view or edit it
+ * @param onViewSchedule opens its bookings and reservations
+ * @param onManageLottery opens its lottery, to set the winners and draw them (US 02.05.01)
+ */
 @Composable
 private fun OwnerCampsiteRow(
     campsite: Campsite,
     onClick: () -> Unit,
     onViewSchedule: () -> Unit,
+    onManageLottery: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).testTag("myCampsiteItem"),
@@ -115,6 +125,12 @@ private fun OwnerCampsiteRow(
                 modifier = Modifier.testTag("viewScheduleButton"),
             ) {
                 Text("View Bookings & Reservations")
+            }
+            Button(
+                onClick = onManageLottery,
+                modifier = Modifier.testTag("manageLotteryButton_${campsite.id}"),
+            ) {
+                Text("Manage Lottery")
             }
         }
     }

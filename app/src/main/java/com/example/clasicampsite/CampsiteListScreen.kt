@@ -1,3 +1,9 @@
+/**
+ * Purpose: Shows the list of campsites, with a search bar (US 01.01.01) and filters for location,
+ * dates and number of guests (US 01.01.02). Tapping a campsite opens its details.
+ * Outstanding issues: Loads every campsite at once, which is fine for a class project but slow
+ * with many campsites.
+ */
 package com.example.clasicampsite
 
 import androidx.compose.foundation.clickable
@@ -16,8 +22,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -25,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,14 +44,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Campsite
 import com.example.clasicampsite.model.CampsiteFilter
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.Instant
 
-
-private val sampleCampsites = listOf(
+/** Sample campsites the list tests use, so they don't depend on what is saved in Firestore. */
+internal val sampleCampsites = listOf(
     Campsite("hello", "Pine Ridge", "Jasper, AB", 6, 3.0, LocalDate.of(2027, 5, 1), LocalDate.of(2027, 9, 30)),
     Campsite("bye", "Lakeside Haven", "Banff, AB", 4, 2.5, LocalDate.of(2027, 6, 1), LocalDate.of(2027, 8, 31)),
     Campsite("what", "Cedar Hollow", "Canmore, AB", 10, 4.4, LocalDate.of(2027, 5, 15), LocalDate.of(2027, 10, 15)),
@@ -50,6 +60,13 @@ private val sampleCampsites = listOf(
     Campsite("craycray", "River Bend", "Hinton, AB", 2, 3.8, LocalDate.of(2027, 5, 1), LocalDate.of(2027, 7, 31))
 )
 
+/**
+ * Checks if this campsite matches the search bar text (US 01.01.01).
+ * A number matches campsites that hold at least that many guests.
+ *
+ * @param query the text typed into the search bar
+ * @return true if the name or location contains the text, or the campsite fits that many guests
+ */
 internal fun Campsite.matchesSearch(query: String): Boolean {
     val q = query.trim()
     if (q.isEmpty()) return true
@@ -63,6 +80,12 @@ internal fun Campsite.matchesSearch(query: String): Boolean {
     return matchesText || matchesOccupancy
 }
 
+/**
+ * Checks if this campsite passes every filter that is set (US 01.01.02).
+ *
+ * @param filter the location, guests and dates picked in the filter dialog
+ * @return true if the campsite matches all of them
+ */
 internal fun Campsite.matchesFilter(filter: CampsiteFilter): Boolean {
     if (filter.location.isNotBlank() &&
         !location.contains(filter.location.trim(), ignoreCase = true)
@@ -70,8 +93,10 @@ internal fun Campsite.matchesFilter(filter: CampsiteFilter): Boolean {
 
     if (filter.guests != null && maxOccupancy < filter.guests) return false
 
-    // The campsite must be available for the whole requested stay.
-    // If only one date is picked, that single date must be available.
+    /**
+     * The campsite must be available for the whole requested stay.
+     * If only one date is picked, that single date must be available.
+     */
     val needFrom = filter.startDate ?: filter.endDate
     val needTo = filter.endDate ?: filter.startDate
     if (needFrom != null && needTo != null) {
@@ -81,14 +106,41 @@ internal fun Campsite.matchesFilter(filter: CampsiteFilter): Boolean {
     return true
 }
 
+/**
+ * Shows the campsites saved in Firestore with a search bar (US 01.01.01) and a filter button
+ * (US 01.01.02). Tapping a campsite opens its details (US 01.01.04).
+ *
+ * @param navController used to open a campsite's details
+ * @param dbController where the campsites are loaded from
+ * @param campsites campsites to show instead of loading them, used by the tests
+ */
 @Composable
-fun CampsiteListScreen(navController: NavController) {
+fun CampsiteListScreen(
+    navController: NavController,
+    dbController: DatabaseController = remember { DatabaseController() },
+    campsites: List<Campsite>? = null,
+) {
     var searchQuery by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(CampsiteFilter()) }
     var showFilterDialog by remember { mutableStateOf(false) }
+    var allCampsites by remember { mutableStateOf(campsites ?: emptyList()) }
+    var isLoading by remember { mutableStateOf(campsites == null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val filteredCampsites = remember(searchQuery, filter) {
-        sampleCampsites.filter { it.matchesSearch(searchQuery) && it.matchesFilter(filter) }
+    LaunchedEffect(campsites) {
+        if (campsites == null) {
+            try {
+                allCampsites = dbController.getCampsites().sortedBy { it.name.lowercase() }
+            } catch (e: Exception) {
+                errorMessage = "Failed to load campsites: ${e.localizedMessage}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    val filteredCampsites = remember(allCampsites, searchQuery, filter) {
+        allCampsites.filter { it.matchesSearch(searchQuery) && it.matchesFilter(filter) }
     }
 
     Column(
@@ -96,7 +148,8 @@ fun CampsiteListScreen(navController: NavController) {
     ) {
         Button(
             onClick = { navController.popBackStack() },
-            modifier = Modifier.testTag("backButton") // back button
+            /** back button */
+            modifier = Modifier.testTag("backButton")
         ) {
             Text("Back")
         }
@@ -126,7 +179,16 @@ fun CampsiteListScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (filteredCampsites.isEmpty()) {
+        if (isLoading) {
+            CircularProgressIndicator()
+            Text("Loading campsites...")
+        } else if (errorMessage != null) {
+            Text(
+                text = errorMessage ?: "",
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.testTag("errorText")
+            )
+        } else if (filteredCampsites.isEmpty()) {
             Text(
                 text = "No campsites found",
                 fontSize = 16.sp,
@@ -144,7 +206,7 @@ fun CampsiteListScreen(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
-                            .clickable { navController.navigate("campsite_detail") }
+                            .clickable { navController.navigate("campsite_detail/${campsite.id}") }
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(text = campsite.name, fontSize = 18.sp)
@@ -162,15 +224,6 @@ fun CampsiteListScreen(navController: NavController) {
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { navController.navigate("campsite_detail") },
-            modifier = Modifier.testTag("viewDetailsButton")
-        ) {
-            Text("View Campsite Details")
-        }
     }
 
     if (showFilterDialog) {
@@ -185,6 +238,13 @@ fun CampsiteListScreen(navController: NavController) {
     }
 }
 
+/**
+ * Popup for filtering campsites by location, dates and number of guests (US 01.01.02).
+ *
+ * @param current the filter that is set right now
+ * @param onApply called with the new filter when Apply is tapped
+ * @param onDismiss called when the popup is closed without applying
+ */
 @Composable
 private fun FilterDialog(
     current: CampsiteFilter,
@@ -294,6 +354,15 @@ private fun FilterDialog(
     )
 }
 
+/**
+ * Button that opens a date picker for one filter date.
+ *
+ * @param label text shown on the button when no date is picked
+ * @param date the picked date, or null
+ * @param onDateSelected called with the new date, or null when it is cleared
+ * @param modifier layout modifier for the button
+ * @param tag test tag for the button
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateField(

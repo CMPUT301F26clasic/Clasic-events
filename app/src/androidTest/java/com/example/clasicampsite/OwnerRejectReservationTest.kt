@@ -22,10 +22,12 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Reservation
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -48,9 +50,13 @@ class OwnerRejectReservationTest {
         Settings.Secure.ANDROID_ID
     )
 
-    /** Saves a test campsite and one upcoming reservation for it, booked by this device */
+    /**
+     * Saves a test campsite and one upcoming reservation for it, booked by this device, and turns
+     * this device's notifications on, since the Profile tests can leave them off
+     */
     @Before
     fun setUp() = runBlocking {
+        setNotifications(true)
         FirebaseFirestore.getInstance().collection("campsites").document(campsiteId)
             .set(mapOf("name" to campsiteName, "location" to "Banff, AB")).await()
         DatabaseController().saveReservation(
@@ -75,6 +81,24 @@ class OwnerRejectReservationTest {
             .filter { (it.getString("message") ?: "").contains(campsiteName) }
             .forEach { it.reference.delete().await() }
         Unit
+    }
+
+    /**
+     * Turns this device's notifications on or off in Firestore, keeping its other profile fields.
+     *
+     * @param on true to get notifications
+     */
+    private fun setNotifications(on: Boolean) = runBlocking {
+        FirebaseFirestore.getInstance().collection("users").document(deviceId)
+            .set(mapOf("notificationsEnabled" to on), SetOptions.merge()).await()
+    }
+
+    /** Reads the messages sent to this device that name the test campsite */
+    private fun messagesForTestCampsite(): List<String> = runBlocking {
+        FirebaseFirestore.getInstance().collection("notifications")
+            .whereEqualTo("userId", deviceId).get().await()
+            .documents.mapNotNull { it.getString("message") }
+            .filter { it.contains(campsiteName) }
     }
 
     /** Opens the Bookings & Reservations screen for the test campsite and waits for it to load */
@@ -141,5 +165,19 @@ class OwnerRejectReservationTest {
         composeRule.onNodeWithTag("noBookedDatesText").assertIsDisplayed()
         composeRule.onNodeWithTag("filter_cancelled").performClick()
         composeRule.onNodeWithText("Status: Rejected").assertIsDisplayed()
+    }
+
+    /** US 02.08.01, US 01.10.01: a camper who turned notifications off isn't sent the rejection */
+    @Test
+    fun rejectingSkipsCamperWithNotificationsOff() {
+        setNotifications(false)
+        try {
+            openScreen()
+            rejectWithReason("Site closed for repairs")
+            composeRule.onNodeWithText("notifications turned off", substring = true).assertIsDisplayed()
+            assertFalse(messagesForTestCampsite().any { it.contains("Site closed for repairs") })
+        } finally {
+            setNotifications(true)
+        }
     }
 }

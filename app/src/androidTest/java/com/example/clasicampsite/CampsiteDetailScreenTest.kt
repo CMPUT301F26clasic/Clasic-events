@@ -1,7 +1,8 @@
-//Purpose: Intent tests for the campsite details screen: name, location, max occupancy, rating.
-//Outstanding issues: Uses the real Firestore database, so it needs internet. It saves one
-//test campsite and delete.
-
+/**
+ * Purpose: Intent tests for the campsite details screen: name, location, max occupancy, rating.
+ * Outstanding issues: Uses the real Firestore database, so it needs internet. It saves one
+ * test campsite and delete.
+ */
 package com.example.clasicampsite
 
 import androidx.compose.ui.test.assertIsDisplayed
@@ -53,6 +54,11 @@ class CampsiteDetailScreenTest {
         DatabaseController().deleteCampsite(testId)
     }
 
+    /**
+     * Shows the details screen for [campsiteId].
+     *
+     * @param campsiteId the Firestore ID of the campsite to show
+     */
     private fun openDetails(campsiteId: String) {
         composeRule.setContent {
             val navController = rememberNavController()
@@ -67,7 +73,7 @@ class CampsiteDetailScreenTest {
         }
     }
 
-    /** The screen shows the campsite's name, location, max occupancy and rating. */
+    /** US 01.01.04: the screen shows the campsite's name, location, max occupancy and rating. */
     @Test
     fun showsSavedCampsiteDetails() {
         openDetails(testId)
@@ -78,7 +84,7 @@ class CampsiteDetailScreenTest {
         composeRule.onNodeWithTag("campsiteRating").assertTextEquals("★ 4.5 / 5.0")
     }
 
-    /** Each detail is on screen, not just in the semantics tree. */
+    /** US 01.01.04: each detail is on screen, not just in the semantics tree. */
     @Test
     fun allFourDetailsAreDisplayed() {
         openDetails(testId)
@@ -89,7 +95,7 @@ class CampsiteDetailScreenTest {
         composeRule.onNodeWithTag("campsiteRating").assertIsDisplayed()
     }
 
-    /** A campsite that doesn't exist shows a message instead of crashing. */
+    /** US 01.01.04: A campsite that doesn't exist shows a message instead of crashing. */
     @Test
     fun missingCampsiteShowsNotFoundMessage() {
         openDetails("no-such-campsite")
@@ -98,7 +104,7 @@ class CampsiteDetailScreenTest {
         }
     }
 
-    /** With no ID, the screen shows its built-in sample campsite. */
+    /** US 01.01.04: with no ID, the screen shows its built-in sample campsite. */
     @Test
     fun noIdShowsSampleCampsite() {
         openDetails("")

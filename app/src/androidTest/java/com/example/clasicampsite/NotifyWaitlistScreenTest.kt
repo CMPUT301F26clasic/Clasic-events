@@ -1,8 +1,8 @@
-/*
+/**
  * Purpose: Intent tests for the owner notifying their campsite's waitlist (US 02.10.01).
  * Outstanding issues: Uses the real Firestore database, so it needs internet. Before and
- *                     after each test it deletes this phone's campsite named CAMPSITE_NAME
- *                     and the notifications sent to ENTRANT_ID.
+ * after each test it deletes this phone's campsite named CAMPSITE_NAME
+ * and the notifications sent to ENTRANT_ID.
  */
 package com.example.clasicampsite
 
@@ -70,7 +70,7 @@ class NotifyWaitlistScreenTest {
 
     /** Deletes this phone's test campsite (and its waitlist entry) and the test entrant's notifications. */
     private suspend fun cleanUp() {
-        // If cleanup fails (e.g. no internet), the tests themselves still decide pass/fail.
+        /** If cleanup fails (e.g. no internet), the tests themselves still decide pass/fail. */
         runCatching {
             database.getCampsitesByOwner(ownerId()).filter { it.name == CAMPSITE_NAME }.forEach {
                 database.leaveLottery(it.id, ENTRANT_ID)
@@ -121,7 +121,7 @@ class NotifyWaitlistScreenTest {
         composeRule.onNodeWithTag("sendWaitlistNotificationButton").performClick()
         waitForText("Sent to 1 entrant")
 
-        // Check the entrant really got it in Firestore.
+        /** Check the entrant really got it in Firestore. */
         val received = runBlocking { database.getNotificationsForUser(ENTRANT_ID) }.map { it.message }
         assertTrue(received.contains("$CAMPSITE_NAME: $MESSAGE"))
     }

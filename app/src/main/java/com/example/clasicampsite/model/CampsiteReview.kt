@@ -1,7 +1,7 @@
-/*
-Purpose: Data model for a campsite rating/review stored in the
-campsites/{campsiteId}/ratings subcollection (US 03.05.01 / #71).
-Outstanding issues: None.
+/**
+ * Purpose: Data model for a campsite rating/review stored in the
+ * campsites/{campsiteId}/ratings subcollection (US 03.05.01 / #71).
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite.model
 

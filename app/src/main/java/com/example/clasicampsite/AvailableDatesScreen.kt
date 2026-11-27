@@ -2,7 +2,7 @@
  * Purpose: Lets a lottery winner see the dates they can book (US 01.04.01), choose a campsite and
  * dates when the lottery has more than one campsite (US 01.04.02), reserve them, or decline the
  * reservation (US 01.04.03). Before reserving, the winner has to confirm they read the campsite
- * rules and policies (US 02.11.01).
+ * rules and policies (US 02.11.01). A winner can only book once per lottery.
  * Outstanding issues: Dates are shown as a list, not a calendar. The rules are the same for every
  * campsite, since owners can't write their own rules yet.
  */
@@ -100,6 +100,7 @@ fun AvailableDatesScreen(
     var showDeclineDialog by remember { mutableStateOf(false) }
     var acceptedRules by remember { mutableStateOf(false) }
     var showRulesDialog by remember { mutableStateOf(false) }
+    var alreadyReserved by remember { mutableStateOf(false) }
 
     LaunchedEffect(lotteryId) {
         try {
@@ -116,6 +117,9 @@ fun AvailableDatesScreen(
                     }
                 }
                 selectedCampsiteId = loaded.campsiteIds.firstOrNull() ?: ""
+                alreadyReserved = Reservation.hasActiveReservationFor(
+                    dbController.getReservationsForUser(deviceId), loaded.id
+                )
             }
         } catch (e: Exception) {
             errorMessage = "Failed to load lottery: ${e.localizedMessage}"
@@ -129,7 +133,8 @@ fun AvailableDatesScreen(
             try {
                 bookedDates = Reservation.bookedDates(dbController.getReservationsForCampsite(selectedCampsiteId))
             } catch (e: Exception) {
-                errorMessage = "Failed to load booked dates: ${e.localizedMessage}"
+                /** shown under the Reserve button, so the rest of the screen stays */
+                bookingMessage = "Failed to load booked dates: ${e.localizedMessage}"
             }
         }
     }
@@ -158,6 +163,11 @@ fun AvailableDatesScreen(
                 Text("You declined this lottery.", modifier = Modifier.testTag("declinedText"))
             } else if (!currentLottery.isWinner(deviceId)) {
                 Text("You did not win this lottery.", modifier = Modifier.testTag("notWinnerText"))
+            } else if (alreadyReserved) {
+                Text(
+                    "You already reserved nights from this lottery. You can see them in Reservations.",
+                    modifier = Modifier.testTag("alreadyReservedText")
+                )
             } else {
                 if (currentLottery.hasMultipleCampsites()) {
                     Text("Pick a campsite", fontWeight = FontWeight.Bold)
@@ -257,6 +267,7 @@ fun AvailableDatesScreen(
                                         dates = selectedDates.sorted(),
                                     )
                                     dbController.saveReservation(reservation)
+                                    alreadyReserved = true
                                     dbController.sendNotification(
                                         deviceId,
                                         "Your reservation at ${reservation.campsiteName} is confirmed for ${reservation.dates.joinToString(", ")}."

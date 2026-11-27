@@ -1,9 +1,9 @@
-/*
+/**
  * Purpose: Intent tests for the owner's Sent Notifications screen (US 02.10.02), including
- *          sending from Notify Waitlist (US 02.10.01) and then finding it in the list.
+ * sending from Notify Waitlist (US 02.10.01) and then finding it in the list.
  * Outstanding issues: Uses the real Firestore database, so it needs internet. Before and
- *                     after each test it deletes this phone's campsite named CAMPSITE_NAME
- *                     and the notifications sent to the two test entrants.
+ * after each test it deletes this phone's campsite named CAMPSITE_NAME
+ * and the notifications sent to the two test entrants.
  * Parts of this file were written with help from Claude (Anthropic), 2026-11-27
  */
 package com.example.clasicampsite
@@ -75,7 +75,7 @@ class SentNotificationsScreenTest {
 
     /** Deletes this phone's test campsite (and its waitlist entry) and the test entrants' notifications. */
     private suspend fun cleanUp() {
-        // If cleanup fails (e.g. no internet), the tests themselves still decide pass/fail.
+        /** If cleanup fails (e.g. no internet), the tests themselves still decide pass/fail. */
         runCatching {
             database.getCampsitesByOwner(ownerId()).filter { it.name == CAMPSITE_NAME }.forEach {
                 database.leaveLottery(it.id, ENTRANT_1)

@@ -6,7 +6,6 @@
  * reservation (US 02.08.01).
  * Outstanding issues: None.
  */
-
 package com.example.clasicampsite
 
 import com.example.clasicampsite.model.Reservation
@@ -223,5 +222,20 @@ class ReservationTest {
                 "the campsite owner.",
             reservation.rejectionMessage(""),
         )
+    }
+
+    /** US 01.04.02: a winner who already booked from a lottery can't book from it again */
+    @Test
+    fun activeReservationFromLotteryIsFound() {
+        val booked = Reservation(lotteryId = "lottery-1", dates = listOf("2027-05-07"))
+        assertTrue(Reservation.hasActiveReservationFor(listOf(booked), "lottery-1"))
+        assertFalse(Reservation.hasActiveReservationFor(listOf(booked), "lottery-2"))
+    }
+
+    /** US 01.04.02: after cancelling, the winner can book from the lottery again */
+    @Test
+    fun cancelledReservationDoesNotCountAsBooked() {
+        val cancelled = Reservation(lotteryId = "lottery-1", status = "cancelled")
+        assertFalse(Reservation.hasActiveReservationFor(listOf(cancelled), "lottery-1"))
     }
 }

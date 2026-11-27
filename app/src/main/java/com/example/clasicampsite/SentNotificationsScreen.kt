@@ -1,4 +1,4 @@
-/*
+/**
  * Purpose: Shows a campsite owner every notification they have sent to their waitlists,
  * newest first, with how many entrants got each one and when (US 02.10.02).
  * Opened from My Campsites or the Notify Waitlist screen.

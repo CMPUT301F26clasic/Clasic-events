@@ -1,7 +1,7 @@
-/*
-Purpose: Lets a campsite owner select multiple campsites they own and list them
-together in a shared lottery (#69).
-Outstanding issues: None.
+/**
+ * Purpose: Lets a campsite owner select multiple campsites they own and list them
+ * together in a shared lottery (#69).
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite
 
@@ -75,7 +75,7 @@ fun SharedLotteryScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf("") }
 
-    // Load all campsites belonging to this owner so they can pick which ones share the lottery.
+    /** Load all campsites belonging to this owner so they can pick which ones share the lottery. */
     LaunchedEffect(ownerId) {
         try {
             isLoading = true
