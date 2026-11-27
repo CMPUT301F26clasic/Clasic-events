@@ -7,6 +7,7 @@ people booking at the exact same moment could still both succeed (needs a transa
 package com.example.clasicampsite.data
 
 import com.example.clasicampsite.model.Campsite
+import com.example.clasicampsite.model.CampsiteReview
 import com.example.clasicampsite.model.Lottery
 import com.example.clasicampsite.model.LotteryEntrant
 import com.example.clasicampsite.model.Reservation
@@ -17,6 +18,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import com.google.firebase.firestore.SetOptions
+import com.example.clasicampsite.AdminAccess.deviceId
 
 private val DEFAULT_DATE = LocalDate.of(1970, 1, 1)
 
@@ -197,6 +199,43 @@ class DatabaseController {
         )
         notifications.add(notification).await()
     }
+    /** Fetches in-app notifications for [deviceId], newest first */
+    data class UserNotification(
+        val message: String = "",
+        val sentAt: Long = 0L,
+    )
+    suspend fun getNotificationsForUser(deviceId: String): List<UserNotification> {
+        val snapshot = notifications.whereEqualTo("userId", deviceId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            val msg = doc.getString("message") ?: return@mapNotNull null
+            val time = doc.getLong("sentAt") ?: 0L
+            UserNotification(message = msg, sentAt = time)
+        }.sortedByDescending { it.sentAt }
+    }
+
+    /** Sends win/loss notifications to entrants based on [winnerUserIds] */
+    suspend fun sendLotteryOutcomeNotifications(
+        campsiteName: String,
+        entrantUserIds: List<String>,
+        winnerUserIds: List<String>,
+    ) {
+        val distinctEntrants = entrantUserIds.distinct()
+        val winnerSet = winnerUserIds.toSet()
+
+        for (userId in distinctEntrants) {
+            if (userId in winnerSet) {
+                sendNotification(
+                    deviceId = userId,
+                    message = "Congrats! You won the lottery for $campsiteName.",
+                )
+            } else {
+                sendNotification(
+                    deviceId = userId,
+                    message = "Sorry, you were not selected in the lottery for $campsiteName.",
+                )
+            }
+        }
+    }
 
     /** Fetches all entrants for a specific campsite lottery */
     suspend fun getLotteryEntrants(campsiteId: String): List<LotteryEntrant> {
@@ -266,6 +305,71 @@ class DatabaseController {
 
         campsiteRef.set(mapOf("rating" to average), SetOptions.merge()).await()
         return average
+    }
+
+    /** Creates a shared [lottery] covering multiple campsites (#69) */
+    suspend fun createSharedLottery(lottery: Lottery): String {
+        require(lottery.campsiteIds.distinct().size >= 2) {
+            "A shared lottery must include at least two campsites."
+        }
+        val cleanLottery = lottery.copy(campsiteIds = lottery.campsiteIds.distinct())
+        saveLottery(cleanLottery)
+        return cleanLottery.id
+    }
+
+    /** Fetches all lotteries that include [campsiteId] */
+    suspend fun getLotteriesForCampsite(campsiteId: String): List<Lottery> {
+        val snapshot = lotteries.whereArrayContains("campsiteIds", campsiteId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Lottery::class.java)?.apply { id = doc.id }
+        }
+    }
+
+    /** Fetches every rating/review across all campsites for admin moderation (#71) */
+    suspend fun getAllCampsiteReviews(): List<CampsiteReview> {
+        val allSites = campsites.get().await()
+        val results = mutableListOf<CampsiteReview>()
+
+        for (siteDoc in allSites.documents) {
+            val siteName = siteDoc.getString("name") ?: ""
+            val ratingsSnapshot = siteDoc.reference.collection("ratings").get().await()
+            for (ratingDoc in ratingsSnapshot.documents) {
+                val stars = ratingDoc.getLong("rating")?.toInt() ?: 0
+                val userId = ratingDoc.getString("userId") ?: ratingDoc.id
+                val comment = ratingDoc.getString("comment")
+                    ?: ratingDoc.getString("review")
+                    ?: ""
+                results.add(
+                    CampsiteReview(
+                        id = ratingDoc.id,
+                        campsiteId = siteDoc.id,
+                        campsiteName = siteName,
+                        userId = userId,
+                        rating = stars,
+                        comment = comment,
+                    )
+                )
+            }
+        }
+        return results
+    }
+
+    /** Deletes a review by [userId] on [campsiteId] and recalculates the campsite's average rating (#71) */
+    suspend fun deleteCampsiteReview(campsiteId: String, userId: String): Double {
+        val campsiteRef = campsites.document(campsiteId)
+        val ratingsRef = campsiteRef.collection("ratings")
+
+        ratingsRef.document(userId).delete().await()
+
+        val remaining = ratingsRef.get().await().documents.mapNotNull { it.getLong("rating") }
+        val newAverage = if (remaining.isEmpty()) {
+            0.0
+        } else {
+            Math.round(remaining.average() * 10) / 10.0
+        }
+
+        campsiteRef.set(mapOf("rating" to newAverage), SetOptions.merge()).await()
+        return newAverage
     }
 
     suspend fun isUserInLottery(campsiteId: String, userId: String): Boolean =

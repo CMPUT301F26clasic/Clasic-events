@@ -1,3 +1,9 @@
+/*
+Purpose: Displays details for a single campsite and lets users join/leave its lottery
+or submit a 1-5 star rating.
+Outstanding issues: None.
+ */
+
 package com.example.clasicampsite
 
 import androidx.compose.foundation.clickable
@@ -40,6 +46,7 @@ import com.example.clasicampsite.model.Campsite
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
+/** Shows details, lottery join/leave controls, and star rating picker for [campsiteId]. */
 @Composable
 fun CampsiteDetailScreen(
     navController: NavController,
