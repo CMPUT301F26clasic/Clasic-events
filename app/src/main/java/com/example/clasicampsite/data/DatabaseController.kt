@@ -11,6 +11,7 @@ import com.example.clasicampsite.model.CampsiteReview
 import com.example.clasicampsite.model.Lottery
 import com.example.clasicampsite.model.LotteryEntrant
 import com.example.clasicampsite.model.Reservation
+import com.example.clasicampsite.model.SentNotification
 import com.example.clasicampsite.model.User
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -250,15 +251,38 @@ class DatabaseController {
      * saves who sent it and for which campsite, so sent notifications can be listed later
      * (US 02.10.01, US 02.10.02). Entrants see it like any other notification.
      */
-    suspend fun sendOwnerNotification(deviceId: String, message: String, ownerId: String, campsiteId: String) {
+    suspend fun sendOwnerNotification(
+        deviceId: String,
+        message: String,
+        ownerId: String,
+        campsiteId: String,
+        sentAt: Long = System.currentTimeMillis(),
+    ) {
         val notification = hashMapOf(
             "userId" to deviceId,
             "message" to message,
-            "sentAt" to System.currentTimeMillis(),
+            "sentAt" to sentAt,
             "senderId" to ownerId,
             "campsiteId" to campsiteId,
         )
         notifications.add(notification).await()
+    }
+
+    /**
+     * Fetches every notification the campsite owner [ownerId] sent with [sendOwnerNotification],
+     * one per entrant who got it (US 02.10.02).
+     */
+    suspend fun getNotificationsSentBy(ownerId: String): List<SentNotification> {
+        val snapshot = notifications.whereEqualTo("senderId", ownerId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            val text = doc.getString("message") ?: return@mapNotNull null
+            SentNotification(
+                userId = doc.getString("userId") ?: "",
+                message = text,
+                sentAt = doc.getLong("sentAt") ?: 0L,
+                campsiteId = doc.getString("campsiteId") ?: "",
+            )
+        }
     }
 
     /** Sends win/loss notifications to entrants based on [winnerUserIds] */

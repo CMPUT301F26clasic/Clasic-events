@@ -1,6 +1,7 @@
 /*
  * Purpose: The screen a campsite owner uses to send a notification to everyone on their
  * campsite's lottery waitlist (US 02.10.01). Opened from the owner's campsite screen.
+ * Links to the Sent Notifications screen (US 02.10.02).
  * Outstanding issues: None known.
  */
 package com.example.clasicampsite
@@ -17,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
@@ -79,5 +81,11 @@ fun NotifyWaitlistScreen(navController: NavController, campsiteId: String) {
             Text(if (viewModel.sending) "Sending..." else "Send to waitlist")
         }
         Text(viewModel.status, modifier = Modifier.testTag("notifyWaitlistStatus"))
+        TextButton(
+            onClick = { navController.navigate("sent_notifications") },
+            modifier = Modifier.testTag("viewSentNotificationsButton"),
+        ) {
+            Text("View sent notifications")
+        }
     }
 }

@@ -61,6 +61,13 @@ fun MyCampsitesScreen(navController: NavController) {
         ) {
             Text("Create a shared lottery")
         }
+        // US 02.10.02: every notification this owner has sent to their waitlists
+        Button(
+            onClick = { navController.navigate("sent_notifications") },
+            modifier = Modifier.fillMaxWidth().testTag("sentNotificationsButton"),
+        ) {
+            Text("Sent notifications")
+        }
 
         when {
             viewModel.loading && viewModel.campsites.isEmpty() -> Text("Loading...")

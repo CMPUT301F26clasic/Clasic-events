@@ -82,8 +82,10 @@ class NotifyWaitlistViewModel(application: Application) : AndroidViewModel(appli
             try {
                 val optedOut = waitlistUserIds.filter { !database.getUser(it).notificationsEnabled }.toSet()
                 val recipients = WaitlistNotice.recipients(waitlistUserIds, optedOut)
+                // One send time for everyone, so Sent Notifications (US 02.10.02) shows it as one send.
+                val sentAt = System.currentTimeMillis()
                 for (userId in recipients) {
-                    database.sendOwnerNotification(userId, notice.fullText(), deviceId, campsiteId)
+                    database.sendOwnerNotification(userId, notice.fullText(), deviceId, campsiteId, sentAt)
                 }
                 status = WaitlistNotice.sentSummary(recipients.size, optedOut.size)
                 if (recipients.isNotEmpty()) message = ""
