@@ -17,6 +17,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import java.time.LocalDate
 import com.google.firebase.firestore.SetOptions
+import com.example.clasicampsite.AdminAccess.deviceId
 
 private val DEFAULT_DATE = LocalDate.of(1970, 1, 1)
 
@@ -190,6 +191,43 @@ class DatabaseController {
             "sentAt" to System.currentTimeMillis(),
         )
         notifications.add(notification).await()
+    }
+    /** Fetches in-app notifications for [deviceId], newest first */
+    data class UserNotification(
+        val message: String = "",
+        val sentAt: Long = 0L,
+    )
+    suspend fun getNotificationsForUser(deviceId: String): List<UserNotification> {
+        val snapshot = notifications.whereEqualTo("userId", deviceId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            val msg = doc.getString("message") ?: return@mapNotNull null
+            val time = doc.getLong("sentAt") ?: 0L
+            UserNotification(message = msg, sentAt = time)
+        }.sortedByDescending { it.sentAt }
+    }
+
+    /** Sends win/loss notifications to entrants based on [winnerUserIds] */
+    suspend fun sendLotteryOutcomeNotifications(
+        campsiteName: String,
+        entrantUserIds: List<String>,
+        winnerUserIds: List<String>,
+    ) {
+        val distinctEntrants = entrantUserIds.distinct()
+        val winnerSet = winnerUserIds.toSet()
+
+        for (userId in distinctEntrants) {
+            if (userId in winnerSet) {
+                sendNotification(
+                    deviceId = userId,
+                    message = "Congrats! You won the lottery for $campsiteName.",
+                )
+            } else {
+                sendNotification(
+                    deviceId = userId,
+                    message = "Sorry, you were not selected in the lottery for $campsiteName.",
+                )
+            }
+        }
     }
 
     /** Fetches all entrants for a specific campsite lottery */
