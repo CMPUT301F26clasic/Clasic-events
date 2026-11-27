@@ -50,8 +50,6 @@ import com.example.clasicampsite.model.CampsiteFilter
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.Instant
-import androidx.compose.runtime.LaunchedEffect
-import com.example.clasicampsite.data.DatabaseController
 
 /** Sample campsites the list tests use, so they don't depend on what is saved in Firestore. */
 internal val sampleCampsites = listOf(
