@@ -1,8 +1,8 @@
-/*
-Purpose: Holds which color blind mode the whole app uses (WOW factor): regular, protanopia,
-deuteranopia or tritanopia. The theme reads it and the Profile screen changes it, so the colors
-switch right away. It is saved with the user's profile and loaded when the app opens.
-Outstanding issues: None.
+/**
+ * Purpose: Holds which color blind mode the whole app uses (WOW factor): regular, protanopia,
+ * deuteranopia or tritanopia. The theme reads it and the Profile screen changes it, so the colors
+ * switch right away. It is saved with the user's profile and loaded when the app opens.
+ * Outstanding issues: None.
  */
 package com.example.clasicampsite
 

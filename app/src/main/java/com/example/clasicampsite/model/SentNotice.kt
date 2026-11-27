@@ -1,4 +1,4 @@
-/*
+/**
  * Purpose: The notifications a campsite owner has sent, for the Sent Notifications list
  * (US 02.10.02). Firestore keeps one notification per entrant, so this groups each send
  * back into one item with how many entrants got it.

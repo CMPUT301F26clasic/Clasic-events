@@ -1,7 +1,7 @@
-/*
-Purpose: The user's profile screen: shows their device ID, lets them edit their
-name, email, phone, turn notifications off, turn on color blind mode, open the app policy, and delete their profile.
-Admins can also switch to viewing the app as a regular user.
+/**
+ * Purpose: The user's profile screen: shows their device ID, lets them edit their
+ * name, email, phone, turn notifications off, turn on color blind mode, open the app policy, and delete their profile.
+ * Admins can also switch to viewing the app as a regular user.
  */
 package com.example.clasicampsite
 
@@ -62,14 +62,14 @@ fun ProfileScreen(navController: NavController) {
     val viewModel: ProfileViewModel = viewModel()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Opens Android's photo picker. When photo is chosen, hand it to the ViewModel.
+    /** Opens Android's photo picker. When photo is chosen, hand it to the ViewModel. */
     val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
             viewModel.setImage(uri)
         }
     }
 
-    // Turns the saved text back into a picture. "remember" only redoes this when it changes.
+    /** Turns the saved text back into a picture. "remember" only redoes this when it changes. */
     val picture = remember(viewModel.profileImage) { decodePicture(viewModel.profileImage) }
 
     Column(
@@ -84,7 +84,7 @@ fun ProfileScreen(navController: NavController) {
         }
         Text("Profile", fontSize = 24.sp)
         Text("Device ID: ${viewModel.deviceId}")
-        // admins can switch between seeing the app as an admin or as a regular user
+        /** admins can switch between seeing the app as an admin or as a regular user */
         if (viewModel.admin) {
             Text("Admin", modifier = Modifier.testTag("adminLabel"))
             var menuOpen by remember { mutableStateOf(false) }
@@ -166,7 +166,9 @@ fun ProfileScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth().testTag("phoneField"),
             )
 
-            // color blind mode dropdown, changes the colors right away and is saved with Update info
+            /**
+             * color blind mode dropdown, changes the colors right away and is saved with Update info
+             */
             var colorMenuOpen by remember { mutableStateOf(false) }
             Box {
                 Button(

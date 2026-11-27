@@ -1,12 +1,12 @@
-/*
+/**
  * File: OwnerCampsiteScreenTest.kt
  * Purpose: Intent tests for the owner's campsite screens: register with an optional map
- *          location (US 02.01.01, US 02.01.02), view and update (US 02.01.03, US 02.01.04),
- *          and My Campsites (US 02.03.01).
+ * location (US 02.01.01, US 02.01.02), view and update (US 02.01.03, US 02.01.04),
+ * and My Campsites (US 02.03.01).
  * Outstanding issues: Uses the real Firestore database, so it needs internet. Each test
- *                     deletes this phone's campsites named in TEST_NAMES before and after
- *                     it runs, so don't use those names for real campsites. Picking a photo
- *                     isn't tested, because Android's photo picker is outside the app.
+ * deletes this phone's campsites named in TEST_NAMES before and after
+ * it runs, so don't use those names for real campsites. Picking a photo
+ * isn't tested, because Android's photo picker is outside the app.
  * Parts of this file were written with help from Claude (Anthropic), 2026-11-03, updated 2026-11-24
  */
 package com.example.clasicampsite
@@ -64,7 +64,7 @@ class OwnerCampsiteScreenTest {
             composeRule.activity.contentResolver, Settings.Secure.ANDROID_ID
         )
         runBlocking {
-            // If cleanup fails (e.g. no internet), the tests themselves still decide pass/fail.
+            /** If cleanup fails (e.g. no internet), the tests themselves still decide pass/fail. */
             runCatching {
                 database.getCampsitesByOwner(ownerId)
                     .filter { site -> site.name in TEST_NAMES || OLD_PREFIXES.any { site.name.startsWith(it) } }
@@ -131,7 +131,7 @@ class OwnerCampsiteScreenTest {
             type("campsiteLongitudeField", longitude)
         }
         composeRule.onNodeWithTag("saveCampsiteButton").performScrollTo().performClick()
-        // Saving goes back to My Campsites; wait for it before checking the list.
+        /** Saving goes back to My Campsites; wait for it before checking the list. */
         waitForTag("myCampsitesTitle")
         waitForTag("myCampsiteItem")
     }
@@ -172,7 +172,7 @@ class OwnerCampsiteScreenTest {
         scrollToCampsite(EDIT_NAME)
 
         composeRule.onNodeWithText(EDIT_NAME).performClick()
-        // The title shows right away, but the fields only appear once Firestore has loaded.
+        /** The title shows right away, but the fields only appear once Firestore has loaded. */
         waitForTag("editCampsiteButton")
         composeRule.onNodeWithTag("campsiteLocationField").assertTextContains("Sylvan Lake, AB")
 

@@ -1,7 +1,8 @@
 /**
  * Purpose: Lets a campsite owner view currently booked dates (#25) and filter
  * past, active, and cancelled reservations (#26) for one of their campsites, and reject an
- * upcoming reservation (US 02.08.01). Rejecting frees the dates and notifies the camper.
+ * upcoming reservation (US 02.08.01). Rejecting frees the dates and notifies the camper,
+ * unless they turned notifications off.
  * Outstanding issues: Rejected reservations are listed under the Cancelled filter.
  */
 package com.example.clasicampsite
@@ -287,8 +288,13 @@ fun OwnerCampsiteScheduleScreen(
                                 reservations = reservations.map { if (it.id == res.id) nowRejected else it }
                                 bookedDates = upcomingBookedDates(reservations, todayStr)
                                 rejectMessage = try {
-                                    dbController.sendNotification(res.userId, nowRejected.rejectionMessage(reason))
-                                    "Reservation rejected. The camper was notified."
+                                    /** campers who turned notifications off aren't sent one (US 01.10.01) */
+                                    if (dbController.wantsNotifications(res.userId)) {
+                                        dbController.sendNotification(res.userId, nowRejected.rejectionMessage(reason))
+                                        "Reservation rejected. The camper was notified."
+                                    } else {
+                                        "Reservation rejected. The camper has notifications turned off."
+                                    }
                                 } catch (e: Exception) {
                                     "Reservation rejected, but the notification could not be sent."
                                 }

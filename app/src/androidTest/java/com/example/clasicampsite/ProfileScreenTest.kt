@@ -1,9 +1,9 @@
-/*
-Purpose: Intent tests for the Profile and Policy screens (US 01.07.03, US 01.08.01,
-US 01.08.02, US 01.09.01, US 01.10.01, US 01.11.01).
-Outstanding issues: Uses the real Firestore database, so it needs internet. The delete test
-deletes the emulator's saved profile. Picking a photo opens Android's own
-picker, which these tests can't control, so that is tested by hand.
+/**
+ * Purpose: Intent tests for the Profile and Policy screens (US 01.07.03, US 01.08.01,
+ * US 01.08.02, US 01.09.01, US 01.10.01, US 01.11.01).
+ * Outstanding issues: Uses the real Firestore database, so it needs internet. The delete test
+ * deletes the emulator's saved profile. Picking a photo opens Android's own
+ * picker, which these tests can't control, so that is tested by hand.
  */
 package com.example.clasicampsite
 
@@ -85,7 +85,6 @@ class ProfileScreenTest {
         openProfile()
         composeRule.onNodeWithText("Device ID:", substring = true).assertIsDisplayed()
     }
-
 
     /** US 01.08.02: the screen offers a way to add or change a profile picture. */
     @Test

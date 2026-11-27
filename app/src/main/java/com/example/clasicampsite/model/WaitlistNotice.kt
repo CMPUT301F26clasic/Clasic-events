@@ -1,4 +1,4 @@
-/*
+/**
  * Purpose: The message a campsite owner sends to everyone on their campsite's lottery
  * waitlist (US 02.10.01). Checks the message, builds the text entrants see, and picks
  * who should get it.

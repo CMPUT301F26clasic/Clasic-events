@@ -1,13 +1,15 @@
-/*
-Purpose: A person using the app, saved in the Firestore "users" collection under their
-device ID (US 01.09.01). Also checks that their details are valid (US 01.07.03).
-Admins are marked with admin = true, set by hand in Firebase (US 03.11.01). Everyone can use
-entrant and owner features.
-Outstanding issues: Firestore rules don't yet stop users from setting admin on themselves.*/
+/**
+ * Purpose: A person using the app, saved in the Firestore "users" collection under their
+ * device ID (US 01.09.01). Also checks that their details are valid (US 01.07.03).
+ * Admins are marked with admin = true, set by hand in Firebase (US 03.11.01). Everyone can use
+ * entrant and owner features.
+ * Outstanding issues: Firestore rules don't yet stop users from setting admin on themselves.
+ */
 package com.example.clasicampsite.model
 
-// The shape of a valid email: text@text.text, with one @ and no spaces.
-private val EMAIL_FORMAT = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$") // made by claude
+/** The shape of a valid email: text@text.text, with one @ and no spaces. */
+/** made by claude */
+private val EMAIL_FORMAT = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
 
 /**
  * @property id Device ID, also used as the Firestore document ID

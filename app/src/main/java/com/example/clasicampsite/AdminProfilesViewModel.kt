@@ -1,8 +1,8 @@
-/*
-Purpose: Holds admin's list of every profile and removes profiles that break the app policy.
-Also knows how many campsites each user owns, and removing a user removes those too (US 03.07.01).
-Outstanding issues: Removing a profile does not yet remove that user's waiting list entries or
-reservations.
+/**
+ * Purpose: Holds admin's list of every profile and removes profiles that break the app policy.
+ * Also knows how many campsites each user owns, and removing a user removes those too (US 03.07.01).
+ * Outstanding issues: Removing a profile does not yet remove that user's waiting list entries or
+ * reservations.
  */
 package com.example.clasicampsite
 
@@ -21,7 +21,8 @@ class AdminProfilesViewModel : ViewModel() {
     private val database = DatabaseController()
 
     var users by mutableStateOf(listOf<User>())
-    var campsiteCounts by mutableStateOf(mapOf<String, Int>()) // owner's device ID -> how many campsites they own
+    /** owner's device ID -> how many campsites they own */
+    var campsiteCounts by mutableStateOf(mapOf<String, Int>())
     var message by mutableStateOf("")
     var loaded by mutableStateOf(false)
 

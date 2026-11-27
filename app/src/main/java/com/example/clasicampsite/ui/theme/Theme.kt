@@ -1,3 +1,7 @@
+/**
+ * Purpose: The app's Material theme. Picks the light, dark or colour blind colour scheme.
+ * Outstanding issues: None.
+ */
 package com.example.clasicampsite.ui.theme
 
 import android.os.Build
@@ -31,8 +35,10 @@ private val LightColorScheme = lightColorScheme(
     onSurface = Color(0xFF1C1B1F)
 )
 
-// builds a color blind scheme on the same backgrounds as above. Only the button (primary)
-// and error colors change, picked so each type of color blindness can tell them apart.
+/**
+ * builds a color blind scheme on the same backgrounds as above. Only the button (primary)
+ * and error colors change, picked so each type of color blindness can tell them apart.
+ */
 private fun colorBlindScheme(darkTheme: Boolean, primary: Color, error: Color) =
     if (darkTheme) {
         darkColorScheme(
@@ -60,23 +66,32 @@ private fun colorBlindScheme(darkTheme: Boolean, primary: Color, error: Color) =
         )
     }
 
+/**
+ * The app's theme. It picks the colours for the chosen colour blind mode.
+ *
+ * @param darkTheme whether the phone is in dark mode
+ * @param dynamicColor whether to use the phone's wallpaper colours on Android 12+
+ * @param colorMode the colour blind mode picked on the Profile screen
+ * @param content the screens shown inside the theme
+ */
 @Composable
 fun ClasiCampsiteTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
-    colorMode: String = "regular", // color blind mode picked on the Profile screen
+    /** color blind mode picked on the Profile screen */
+    colorMode: String = "regular",
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        // red-blind people see reds as dark, so errors are orange instead
+        /** red-blind people see reds as dark, so errors are orange instead */
         colorMode == "protanopia" ->
             if (darkTheme) colorBlindScheme(true, ColorBlindSkyBlue, ColorBlindOrange)
             else colorBlindScheme(false, ColorBlindBlue, ColorBlindAmber)
-        // for green-blind people, blue and orange-red are the easiest pair to tell apart
+        /** for green-blind people, blue and orange-red are the easiest pair to tell apart */
         colorMode == "deuteranopia" ->
             if (darkTheme) colorBlindScheme(true, ColorBlindSkyBlue, ColorBlindVermillion)
             else colorBlindScheme(false, ColorBlindBlue, ColorBlindVermillion)
-        // blue-blind people mix up blue/green but see red well, so teal and red
+        /** blue-blind people mix up blue/green but see red well, so teal and red */
         colorMode == "tritanopia" ->
             if (darkTheme) colorBlindScheme(true, TritanTealLight, TritanRedLight)
             else colorBlindScheme(false, TritanTeal, TritanRed)

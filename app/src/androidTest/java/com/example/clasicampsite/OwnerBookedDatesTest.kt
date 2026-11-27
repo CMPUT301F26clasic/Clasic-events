@@ -1,10 +1,9 @@
-package com.example.clasicampsite
-
-/*
+/**
  * Purpose: Tests for viewing currently booked dates on a campsite owned
  * by the current owner (#25).
  * Outstanding issues: None right now.
  */
+package com.example.clasicampsite
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -14,11 +13,13 @@ import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDate
 
+/** Tests showing an owner the booked dates of their campsite (US 02.06.01). */
 class OwnerBookedDatesTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    /** US 02.06.01: cancelled reservations don't count as booked dates */
     @Test
     fun bookedDatesHelper_excludesCancelledReservations() {
         val reservations = listOf(
@@ -42,6 +43,7 @@ class OwnerBookedDatesTest {
         assert("2027-06-15" !in activeDates)
     }
 
+    /** US 02.06.01: the owner's bookings screen opens */
     @Test
     fun ownerScheduleScreen_showsBookedDatesSection() {
         val sampleCampsiteId = LocalDate.now().toString()

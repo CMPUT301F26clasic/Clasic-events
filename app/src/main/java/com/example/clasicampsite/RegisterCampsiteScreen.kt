@@ -1,6 +1,14 @@
+/**
+ * Purpose: Lets a campsite owner register a new campsite with its name, location, maximum
+ * occupancy, number of winners and available dates (US 02.01.01). The campsite is saved as
+ * owned by this device, so it shows in My Campsites.
+ * Outstanding issues: Price, description, tags, image and map location can be added afterwards
+ * from My Campsites.
+ */
 
 package com.example.clasicampsite
 
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -39,15 +47,23 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-//  The following ui and function layouts are from, ChatGPT "Provide a layout for my registercampsitescreen", 2026-11-06
+/**
+ * The following ui and function layouts are from, ChatGPT "Provide a layout for my registercampsitescreen", 2026-11-06
+ */
 
+/**
+ * Form for an owner to register a new campsite with its details (US 02.01.01).
+ *
+ * @param navController used to go back after saving
+ */
 @Composable
 fun RegisterCampsiteScreen(navController: NavController) {
 
     val database = remember { DatabaseController() }
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Form fields
+    /** Form fields */
     var name by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var maxOccupancy by remember { mutableStateOf("") }
@@ -173,6 +189,7 @@ fun RegisterCampsiteScreen(navController: NavController) {
 
                     else -> {
                         val campsite = Campsite(
+                            ownerId = AdminAccess.deviceId(context),
                             name = name.trim(),
                             location = location.trim(),
                             maxOccupancy = occupancy,
@@ -190,7 +207,7 @@ fun RegisterCampsiteScreen(navController: NavController) {
                                 database.saveCampsite(campsite)
                                 message = "Campground successfully registered!"
 
-                                // Clear form after successful registration
+                                /** Clear form after successful registration */
                                 name = ""
                                 location = ""
                                 maxOccupancy = ""
@@ -217,6 +234,14 @@ fun RegisterCampsiteScreen(navController: NavController) {
     }
 }
 
+/**
+ * Button that opens a date picker for one registration date.
+ *
+ * @param label text shown on the button
+ * @param date the picked date, or null
+ * @param onDateSelected called with the picked date
+ * @param tag test tag for the button
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun RegistrationDateField(

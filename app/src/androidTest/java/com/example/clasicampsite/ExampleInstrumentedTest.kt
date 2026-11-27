@@ -1,3 +1,7 @@
+/**
+ * Purpose: Android Studio's starter instrumented test. Checks the app's package name.
+ * Outstanding issues: None.
+ */
 package com.example.clasicampsite
 
 import androidx.test.platform.app.InstrumentationRegistry
@@ -15,9 +19,10 @@ import org.junit.Assert.*
  */
 @RunWith(AndroidJUnit4::class)
 class ExampleInstrumentedTest {
+    /** Android Studio starter test, not part of a user story: checks the app's package name. */
     @Test
     fun useAppContext() {
-        // Context of the app under test.
+        /** Context of the app under test. */
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         assertEquals("com.example.clasicampsite", appContext.packageName)
     }

@@ -32,8 +32,6 @@ class DatabaseController {
     private val reservations = FirebaseFirestore.getInstance().collection("reservations")
     private val notifications = FirebaseFirestore.getInstance().collection("notifications")
 
-
-
     /** Returns user saved under [deviceId], or a new empty user if none is saved yet */
     suspend fun getUser(deviceId: String): User {
         val document = users.document(deviceId).get().await()
@@ -170,6 +168,28 @@ class DatabaseController {
         lotteries.document(lotteryId).update("declined", FieldValue.arrayUnion(deviceId)).await()
     }
 
+    /**
+     * Fetches every lottery that [deviceId] won, so winners can pick their dates (US 01.04.01).
+     *
+     * @param deviceId the user's device ID
+     * @return the lotteries with this user in their winners
+     */
+    suspend fun getLotteriesWonBy(deviceId: String): List<Lottery> {
+        val snapshot = lotteries.whereArrayContains("winners", deviceId).get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(Lottery::class.java)?.apply { id = doc.id }
+        }
+    }
+
+    /**
+     * Checks if a user still wants notifications from owners and lottery results (US 01.10.01).
+     * Users who never saved a profile get them.
+     *
+     * @param deviceId the user's device ID
+     * @return false if the user turned notifications off
+     */
+    suspend fun wantsNotifications(deviceId: String): Boolean = getUser(deviceId).notificationsEnabled
+
     /** Fetches every reservation for the campsite with [campsiteId] */
     suspend fun getReservationsForCampsite(campsiteId: String): List<Reservation> {
         val snapshot = reservations.whereEqualTo("campsiteId", campsiteId).get().await()
@@ -232,11 +252,22 @@ class DatabaseController {
         )
         notifications.add(notification).await()
     }
-    /** Fetches in-app notifications for [deviceId], newest first */
+    /**
+     * One in-app notification shown to a user.
+     *
+     * @property message The text of the notification
+     * @property sentAt When it was sent, in milliseconds since 1970
+     */
     data class UserNotification(
         val message: String = "",
         val sentAt: Long = 0L,
     )
+    /**
+     * Fetches in-app notifications for [deviceId], newest first.
+     *
+     * @param deviceId the user's device ID
+     * @return the user's notifications, newest first
+     */
     suspend fun getNotificationsForUser(deviceId: String): List<UserNotification> {
         val snapshot = notifications.whereEqualTo("userId", deviceId).get().await()
         return snapshot.documents.mapNotNull { doc ->
@@ -285,20 +316,32 @@ class DatabaseController {
         }
     }
 
-    /** Sends win/loss notifications to entrants based on [winnerUserIds] */
+    /**
+     * Sends win/loss notifications to entrants based on [winnerUserIds] (US 01.03.01). Entrants who
+     * turned notifications off are skipped (US 01.10.01).
+     *
+     * @param campsiteName the campsite named in the message
+     * @param entrantUserIds everyone who was in the lottery
+     * @param winnerUserIds the entrants who won
+     * @return how many entrants were skipped because they turned notifications off
+     */
     suspend fun sendLotteryOutcomeNotifications(
         campsiteName: String,
         entrantUserIds: List<String>,
         winnerUserIds: List<String>,
-    ) {
+    ): Int {
         val distinctEntrants = entrantUserIds.distinct()
         val winnerSet = winnerUserIds.toSet()
+        var skipped = 0
 
         for (userId in distinctEntrants) {
-            if (userId in winnerSet) {
+            if (!wantsNotifications(userId)) {
+                skipped++
+            } else if (userId in winnerSet) {
                 sendNotification(
                     deviceId = userId,
-                    message = "Congrats! You won the lottery for $campsiteName.",
+                    message = "Congrats! You won the lottery for $campsiteName. " +
+                        "Open Reservations to pick your dates.",
                 )
             } else {
                 sendNotification(
@@ -307,6 +350,7 @@ class DatabaseController {
                 )
             }
         }
+        return skipped
     }
 
     /** Fetches all entrants for a specific campsite lottery */
@@ -444,15 +488,34 @@ class DatabaseController {
         return newAverage
     }
 
+    /**
+     * Checks if a user has joined a campsite's lottery (US 01.01.06).
+     *
+     * @param campsiteId the campsite's Firestore ID
+     * @param userId the user's device ID
+     * @return true if the user is in the lottery
+     */
     suspend fun isUserInLottery(campsiteId: String, userId: String): Boolean =
         campsites.document(campsiteId)
             .collection("lottery").document(userId)
             .get().await().exists()
 
+    /**
+     * Adds a user to a campsite's lottery (US 01.01.06).
+     *
+     * @param campsiteId the campsite's Firestore ID
+     * @param userId the user's device ID
+     */
     suspend fun joinLottery(campsiteId: String, userId: String) {
         saveLotteryEntrant(LotteryEntrant(campsiteId = campsiteId, userId = userId))
     }
 
+    /**
+     * Takes a user out of a campsite's lottery (US 01.01.06).
+     *
+     * @param campsiteId the campsite's Firestore ID
+     * @param userId the user's device ID
+     */
     suspend fun leaveLottery(campsiteId: String, userId: String) {
         campsites.document(campsiteId)
             .collection("lottery").document(userId)

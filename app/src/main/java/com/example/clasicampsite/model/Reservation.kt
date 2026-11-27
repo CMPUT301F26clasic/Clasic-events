@@ -108,6 +108,17 @@ data class Reservation(
     /** Helper functions that work on a list of reservations. */
     companion object {
         /**
+         * Checks if the user already has an active reservation from a lottery, so a winner
+         * only books once per lottery.
+         *
+         * @param reservations the user's reservations
+         * @param lotteryId the lottery to check
+         * @return true if one of them is active and came from that lottery
+         */
+        fun hasActiveReservationFor(reservations: List<Reservation>, lotteryId: String): Boolean =
+            reservations.any { it.lotteryId == lotteryId && it.status == "active" }
+
+        /**
          * Returns true if a winner is allowed to reserve: they picked at least one night and
          * ticked the box saying they read the campsite rules and policies (US 02.11.01).
          *

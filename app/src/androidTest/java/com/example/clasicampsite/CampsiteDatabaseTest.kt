@@ -1,5 +1,7 @@
-// The following tests are from, ChatGPT, "Write me test cases for campsites in my database", 2026-11-06
-/*
+/**
+ * The following tests are from, ChatGPT, "Write me test cases for campsites in my database", 2026-11-06
+ */
+/**
  * Purpose: Tests campsite registration and storage in Firestore (US 02.01.01).
  * Outstanding issues: Uses the real Firestore database, so it needs internet
  * and Firestore rules that allow reads and writes.
@@ -19,6 +21,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.time.LocalDate
 
+/** Tests saving a campsite to Firestore and reading it back (US 02.01.01). */
 @RunWith(AndroidJUnit4::class)
 class CampsiteDatabaseTest {
 
@@ -37,10 +40,10 @@ class CampsiteDatabaseTest {
         )
 
         try {
-            // Save the campsite.
+            /** Save the campsite. */
             database.saveCampsite(campsite)
 
-            // Retrieve the saved campsite.
+            /** Retrieve the saved campsite. */
             val retrieved = database.getCampsite(campsite.id)
 
             assertNotNull(retrieved)
@@ -57,7 +60,7 @@ class CampsiteDatabaseTest {
                 retrieved.availableTo
             )
 
-            // Verify the actual Firestore document.
+            /** Verify the actual Firestore document. */
             val document = FirebaseFirestore.getInstance()
                 .collection("campsites")
                 .document(campsite.id)
@@ -70,12 +73,12 @@ class CampsiteDatabaseTest {
             assertEquals("2027-09-30", document.getString("availableTo"))
 
         } finally {
-            // Delete the test campsite so it doesn't remain in the database.
+            /** Delete the test campsite so it doesn't remain in the database. */
             if (campsite.id.isNotBlank()) {
                 FirebaseFirestore.getInstance()
                     .collection("campsites")
                     .document(campsite.id)
-                    // comment out if you want it to not delete the test campsite
+                    /** comment out if you want it to not delete the test campsite */
                     .delete()
                     .await()
 

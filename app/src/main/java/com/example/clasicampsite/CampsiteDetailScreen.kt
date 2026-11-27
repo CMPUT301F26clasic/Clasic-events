@@ -1,9 +1,8 @@
-/*
-Purpose: Displays details for a single campsite and lets users join/leave its lottery
-or submit a 1-5 star rating.
-Outstanding issues: None.
+/**
+ * Purpose: Displays details for a single campsite and lets users join/leave its lottery
+ * or submit a 1-5 star rating.
+ * Outstanding issues: None.
  */
-
 package com.example.clasicampsite
 
 import androidx.compose.foundation.clickable
@@ -56,9 +55,11 @@ fun CampsiteDetailScreen(
     var campsite by remember { mutableStateOf<Campsite?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    //keya adding variables for already in lottery list //
+    /** keya adding variables for already in lottery list */
     var alreadyinLottery by remember { mutableStateOf(false) }
     var updateLottery by remember { mutableStateOf(false) }
+    /** shown under the join button, so a failed join doesn't hide the campsite */
+    var lotteryError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val userId = remember {
@@ -69,9 +70,7 @@ fun CampsiteDetailScreen(
     var rating by remember { mutableStateOf(false) }
     var ratingError by remember { mutableStateOf<String?>(null) }
 
-
-
-    // Fetch details from Firestore when campsiteId changes
+    /** Fetch details from Firestore when campsiteId changes */
     LaunchedEffect(campsiteId) {
         if (campsiteId.isNotBlank()) {
             try {
@@ -92,7 +91,7 @@ fun CampsiteDetailScreen(
                 isLoading = false
             }
         } else {
-            // Sample fallback data if no ID provided for preview/testing
+            /** Sample fallback data if no ID provided for preview/testing */
             campsite = Campsite(
                 id = "sample_1",
                 name = "Pine Ridge Campsite",
@@ -154,6 +153,7 @@ fun CampsiteDetailScreen(
                 if (userId != null) {
                     scope.launch {
                         updateLottery = true
+                        lotteryError = null
                         try {
                             if (alreadyinLottery) {
                                 dbController.leaveLottery(site.id, userId)
@@ -163,7 +163,7 @@ fun CampsiteDetailScreen(
                                 alreadyinLottery = true
                             }
                         } catch (e: Exception) {
-                            errorMessage = "Lottery update failed: ${e.localizedMessage}"
+                            lotteryError = "Lottery update failed: ${e.localizedMessage}"
                         } finally {
                             updateLottery = false
                         }
@@ -193,6 +193,14 @@ fun CampsiteDetailScreen(
                 }
             }
 
+            lotteryError?.let { message ->
+                Text(
+                    text = message,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag("lotteryErrorText")
+                )
+            }
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -205,7 +213,7 @@ fun CampsiteDetailScreen(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // 1. Name
+                    /** 1. Name */
                     Column {
                         Text(
                             text = "Name",
@@ -220,7 +228,7 @@ fun CampsiteDetailScreen(
                         )
                     }
 
-                    // 2. Location
+                    /** 2. Location */
                     Column {
                         Text(
                             text = "Location",
@@ -234,8 +242,10 @@ fun CampsiteDetailScreen(
                         )
                     }
 
-                    // 3. Max Occupancy & 4. Rating Row
-                    // 3. Max Occupancy & 4. Rating Row
+                    /**
+                     * 3. Max Occupancy & 4. Rating Row
+                     * 3. Max Occupancy & 4. Rating Row
+                     */
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
@@ -266,23 +276,25 @@ fun CampsiteDetailScreen(
                                 modifier = Modifier.testTag("campsiteRating")
                             )
 
-                            // Manage Lottery Button
-                            Spacer(modifier = Modifier.height(16.dp))
+                            /** Manage Lottery button, only for the campsite's owner */
+                            if (site.ownerId.isNotBlank() && site.ownerId == userId) {
+                                Spacer(modifier = Modifier.height(16.dp))
 
-                            Button(
-                                onClick = {
-                                    navController.navigate("manage_lottery/${site.id}")
-                                },
-                                modifier = Modifier.testTag("manageLotteryButton")
-                            ) {
-                                Text("Manage Lottery")
+                                Button(
+                                    onClick = {
+                                        navController.navigate("manage_lottery/${site.id}")
+                                    },
+                                    modifier = Modifier.testTag("manageLotteryButton")
+                                ) {
+                                    Text("Manage Lottery")
+                                }
                             }
                         }
                     }
                 }
             }
 
-            // Star picker, below the card
+            /** Star picker, below the card */
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(

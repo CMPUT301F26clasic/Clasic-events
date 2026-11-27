@@ -1,7 +1,7 @@
-/*
-Purpose: Holds the admin's list of every campsite.
-Outstanding issues: Anyone can open this screen for now. It should only show for admins once
-roles are added.
+/**
+ * Purpose: Holds the admin's list of every campsite.
+ * Outstanding issues: Anyone can open this screen for now. It should only show for admins once
+ * roles are added.
  */
 package com.example.clasicampsite
 

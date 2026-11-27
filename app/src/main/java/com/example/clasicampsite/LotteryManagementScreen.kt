@@ -1,9 +1,10 @@
-/*
-Purpose: Lets a campsite owner set the number of lottery winners, view the waitlist,
-and draw/notify entrants (US 02.04.05, US 02.09.01, #5).
-Outstanding issues: None.
+/**
+ * Purpose: Lets a campsite owner set the number of lottery winners, view the waitlist,
+ * and draw/notify entrants (US 02.04.05, US 02.09.01, #5). Drawing saves the winners in a
+ * lottery so they can pick their dates (US 02.05.01).
+ * Outstanding issues: The owner draws by pressing a button. Drawing automatically when the
+ * registration period ends is not done.
  */
-
 package com.example.clasicampsite
 
 import androidx.compose.foundation.layout.Arrangement
@@ -37,10 +38,21 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
+import com.example.clasicampsite.model.Campsite
+import com.example.clasicampsite.model.Lottery
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
-//  The following ui and function layouts are from, ChatGPT "Provide a layout for my lotterymanagementscreen", 2026-11-06
-/** Screen where a campsite owner manages lottery winner count and notifies entrants. */
+/**
+ * The following ui and function layouts are from, ChatGPT "Provide a layout for my lotterymanagementscreen", 2026-11-06
+ */
+/**
+ * Screen where a campsite owner manages lottery winner count, draws winners and notifies entrants.
+ *
+ * @param navController used to go back
+ * @param campsiteId the Firestore ID of the campsite whose lottery is managed
+ * @param dbController where the campsite, entrants and lottery are loaded from and saved
+ */
 @Composable
 fun LotteryManagementScreen(
     navController: NavController,
@@ -53,26 +65,32 @@ fun LotteryManagementScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
 
+    /** errorMessage is only for when the screen can't load, actionError is for a button that failed */
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var actionError by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf("") }
+    var campsite by remember { mutableStateOf<Campsite?>(null) }
+    var drawnLottery by remember { mutableStateOf<Lottery?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
 
     var isSendingNotifications by remember { mutableStateOf(false) }
 
-    // Load the campsite and its lottery entrants.
+    /** Load the campsite and its lottery entrants. */
     LaunchedEffect(campsiteId) {
         try {
             isLoading = true
             errorMessage = null
 
-            val campsite = dbController.getCampsiteLotteryDetails(campsiteId)
+            val loaded = dbController.getCampsite(campsiteId)
 
-            if (campsite == null) {
+            if (loaded == null) {
                 errorMessage = "Campsite not found."
             } else {
-                campsiteName = campsite.first
-                winnerCount = campsite.second.toString()
+                campsite = loaded
+                campsiteName = loaded.name
+                winnerCount = loaded.numberOfWinners.toString()
+                drawnLottery = dbController.getLottery(campsiteId)
 
                 val entrants = dbController.getLotteryEntrants(campsiteId)
 
@@ -126,7 +144,7 @@ fun LotteryManagementScreen(
                 value = winnerCount,
                 onValueChange = { winnerCount = it.filter(Char::isDigit)
                     successMessage = ""
-                    errorMessage = null
+                    actionError = null
                 },
                 label = { Text("Number of winners") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -141,19 +159,19 @@ fun LotteryManagementScreen(
                     val count = winnerCount.toIntOrNull()
 
                     if (count == null || count <= 0) {
-                        errorMessage = "Please enter a number of winners greater than zero."
+                        actionError = "Please enter a number of winners greater than zero."
                     } else {
                         coroutineScope.launch {
                             try {
                                 isSaving = true
-                                errorMessage = null
+                                actionError = null
                                 successMessage = ""
 
                                 dbController.updateNumberOfWinners(campsiteId, count)
 
                                 successMessage = "Number of winners successfully updated!"
                             } catch (e: Exception) {
-                                errorMessage = "Failed to update lottery settings: ${e.localizedMessage}"
+                                actionError = "Failed to update lottery settings: ${e.localizedMessage}"
                             } finally {
                                 isSaving = false
                             }
@@ -166,32 +184,50 @@ fun LotteryManagementScreen(
             }
             Spacer(modifier = Modifier.height(8.dp))
 
+            val alreadyDrawn = drawnLottery?.hasBeenDrawn() == true
+
             Button(
-                enabled = !isSaving && !isSendingNotifications,
+                enabled = !isSaving && !isSendingNotifications && !alreadyDrawn,
                 onClick = {
                     val count = winnerCount.toIntOrNull()
+                    val site = campsite
+                    val today = LocalDate.now()
                     if (count == null || count <= 0) {
-                        errorMessage = "Please enter a number of winners greater than zero."
+                        actionError = "Please enter a number of winners greater than zero."
+                    } else if (site == null) {
+                        actionError = "Campsite not found."
+                    } else if (Lottery.datesBetween(site.availableFrom, site.availableTo, today).isEmpty()) {
+                        actionError = "Set this campsite's available dates first, so winners have nights to book."
                     } else {
                         coroutineScope.launch {
                             try {
                                 isSendingNotifications = true
-                                errorMessage = null
+                                actionError = null
                                 successMessage = ""
 
                                 val entrants = dbController.getLotteryEntrants(campsiteId)
                                 val entrantIds = entrants.map { it.userId }.distinct()
-                                val pickedWinners = entrantIds.shuffled().take(count)
+                                val pickedWinners = Lottery.pickWinners(entrantIds, count)
 
-                                dbController.sendLotteryOutcomeNotifications(
-                                    campsiteName = campsiteName.ifBlank { "this campsite" },
-                                    entrantUserIds = entrantIds,
-                                    winnerUserIds = pickedWinners,
-                                )
+                                if (pickedWinners.isEmpty()) {
+                                    actionError = "Nobody has joined this lottery yet."
+                                } else {
+                                    /** save the winners first, so they can book even if a notification fails */
+                                    val lottery = Lottery.forCampsite(site, pickedWinners, today)
+                                    dbController.saveLottery(lottery)
+                                    drawnLottery = lottery
 
-                                successMessage = "Sent notifications (${pickedWinners.size} winner(s), ${entrantIds.size - pickedWinners.size} not selected)."
+                                    val skipped = dbController.sendLotteryOutcomeNotifications(
+                                        campsiteName = campsiteName.ifBlank { "this campsite" },
+                                        entrantUserIds = entrantIds,
+                                        winnerUserIds = pickedWinners,
+                                    )
+
+                                    successMessage = "Drew ${pickedWinners.size} winner(s), ${entrantIds.size - pickedWinners.size} not selected." +
+                                        if (skipped > 0) " $skipped entrant(s) have notifications off." else ""
+                                }
                             } catch (e: Exception) {
-                                errorMessage = "Failed to send notifications: ${e.localizedMessage}"
+                                actionError = "Failed to draw winners: ${e.localizedMessage}"
                             } finally {
                                 isSendingNotifications = false
                             }
@@ -200,7 +236,20 @@ fun LotteryManagementScreen(
                 },
                 modifier = Modifier.testTag("notifyEntrantsButton"),
             ) {
-                Text(if (isSendingNotifications) "Sending..." else "Draw & Notify Entrants")
+                Text(
+                    when {
+                        isSendingNotifications -> "Drawing..."
+                        alreadyDrawn -> "Winners already drawn"
+                        else -> "Draw & Notify Entrants"
+                    }
+                )
+            }
+
+            if (alreadyDrawn) {
+                Text(
+                    text = "${drawnLottery?.winners?.size ?: 0} winner(s) can now pick their dates.",
+                    modifier = Modifier.testTag("drawnText")
+                )
             }
 
             if (successMessage.isNotBlank()) {
@@ -208,6 +257,14 @@ fun LotteryManagementScreen(
                     text = successMessage,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.testTag("lotterySuccessMessage")
+                )
+            }
+
+            actionError?.let { message ->
+                Text(
+                    text = message,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag("lotteryActionError")
                 )
             }
 

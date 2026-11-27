@@ -1,4 +1,4 @@
-/*
+/**
  * Purpose: The screen a campsite owner uses to send a notification to everyone on their
  * campsite's lottery waitlist (US 02.10.01). Opened from the owner's campsite screen.
  * Links to the Sent Notifications screen (US 02.10.02).

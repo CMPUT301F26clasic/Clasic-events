@@ -1,5 +1,5 @@
-/*
-Purpose: Shows the app's policy and guidelines.
+/**
+ * Purpose: Shows the app's policy and guidelines.
  */
 package com.example.clasicampsite
 

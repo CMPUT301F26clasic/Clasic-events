@@ -1,5 +1,7 @@
-// The following tests are from, ChatGPT, "Write me test cases for my lottery management", 2026-11-06
-/*
+/**
+ * The following tests are from, ChatGPT, "Write me test cases for my lottery management", 2026-11-06
+ */
+/**
  * Purpose: Intent tests for the lottery management screen
  * (US 02.04.05, US 02.09.01).
  *
@@ -9,6 +11,10 @@
 
 package com.example.clasicampsite
 
+import com.google.firebase.firestore.SetOptions
+import com.example.clasicampsite.data.DatabaseController
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -39,7 +45,7 @@ class LotteryManagementScreenTest {
     val composeRule = createComposeRule()
     private val firestore = FirebaseFirestore.getInstance()
 
-    // Unique campsite ID so tests do not interfere with existing data.
+    /** Unique campsite ID so tests do not interfere with existing data. */
     private val testCampsiteId = "lottery_test_${UUID.randomUUID()}"
 
     /** Waits up to 10 seconds for [text] to appear, because Firestore takes time. */
@@ -75,7 +81,7 @@ class LotteryManagementScreenTest {
                 .get()
                 .await()
 
-            // Delete entrant documents and their associated test users.
+            /** Delete entrant documents and their associated test users. */
             entrants.documents.forEach { entrant ->
                 val userId = entrant.getString("userId") ?: entrant.id
 
@@ -116,12 +122,12 @@ class LotteryManagementScreenTest {
         runBlocking {
             val userId = "lottery_test_user_${UUID.randomUUID()}"
 
-            // Create the user document.
+            /** Create the user document. */
             firestore.collection("users")
                 .document(userId)
                 .set(mapOf("id" to userId, "name" to name, "email" to "test@example.com")).await()
 
-            // Associate the user with the test campsite's lottery.
+            /** Associate the user with the test campsite's lottery. */
             firestore.collection("campsites")
                 .document(testCampsiteId)
                 .collection("lottery")
@@ -150,7 +156,7 @@ class LotteryManagementScreenTest {
         composeRule.onNodeWithTag("saveWinnerCountButton").performClick()
         waitForText("Number of winners successfully updated!")
 
-        // Verify that the new winner count was saved to Firestore.
+        /** Verify that the new winner count was saved to Firestore. */
         val savedCount = runBlocking {
             firestore.collection("campsites").document(testCampsiteId).get().await()
                 .getLong("numberOfWinners")
@@ -201,5 +207,31 @@ class LotteryManagementScreenTest {
         composeRule.onNodeWithText("Lottery Test Entrant One", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("Lottery Test Entrant Two", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("2 entrants").assertIsDisplayed()
+    }
+
+    /** US 02.05.01: drawing saves the winners and the campsite's dates, and can't be done twice */
+    @Test
+    fun drawSavesWinnersAndCanOnlyHappenOnce() {
+        runBlocking {
+            firestore.collection("campsites").document(testCampsiteId).set(
+                mapOf("availableFrom" to "2099-07-01", "availableTo" to "2099-07-03", "numberOfWinners" to 1),
+                SetOptions.merge()
+            ).await()
+        }
+        addTestEntrant("Lottery Test Entrant One")
+        try {
+            openLotteryManagementScreen()
+            composeRule.onNodeWithTag("notifyEntrantsButton").performClick()
+            composeRule.waitUntil(10_000) {
+                composeRule.onAllNodesWithTag("drawnText").fetchSemanticsNodes().isNotEmpty()
+            }
+
+            val saved = runBlocking { DatabaseController().getLottery(testCampsiteId) }
+            assertEquals(1, saved?.winners?.size)
+            assertEquals(listOf("2099-07-01", "2099-07-02", "2099-07-03"), saved?.availableDates)
+            composeRule.onNodeWithTag("notifyEntrantsButton").assertIsNotEnabled()
+        } finally {
+            runBlocking { firestore.collection("lotteries").document(testCampsiteId).delete().await() }
+        }
     }
 }
