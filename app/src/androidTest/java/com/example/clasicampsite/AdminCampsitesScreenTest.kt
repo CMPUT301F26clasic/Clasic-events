@@ -21,6 +21,7 @@ import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.junit.After
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -122,5 +123,19 @@ class AdminCampsitesScreenTest {
         composeRule.onNodeWithText(testName).performClick()
         waitForText("Campsite Details")
         composeRule.onNodeWithTag("campsiteName").assertIsDisplayed()
+    }
+
+    /** Admin can remove a campsite after confirming, and it is deleted from Firestore. */
+    @Test
+    fun removeCampsiteAsksFirstThenRemovesIt() {
+        openAdminCampsites()
+        composeRule.onNodeWithTag("removeCampsiteButton_$testId").performClick()
+        composeRule.onNodeWithText("Remove campsite?").assertIsDisplayed()
+        composeRule.onNodeWithTag("confirmRemoveCampsiteButton").performClick()
+        waitForText("Campsite removed")
+        composeRule.onNodeWithText(testName).assertDoesNotExist()
+
+        val saved = runBlocking { DatabaseController().getCampsite(testId) }
+        assertNull(saved)
     }
 }

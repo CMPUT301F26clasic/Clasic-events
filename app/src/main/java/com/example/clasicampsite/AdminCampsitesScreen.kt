@@ -1,7 +1,8 @@
-/**
- * Purpose: The admin screen that lists every campsite. Tapping one opens its details.
- * Only admins can use it; everyone else sees "Admins only" (US 03.11.01).
- * Outstanding issues: None.
+/*
+Purpose: The admin screen that lists every campsite. Tapping one opens its details,
+and admins can remove campsites that violate policy after confirming.
+Only admins can use it; everyone else sees "Admins only" (US 03.11.01).
+Outstanding issues: None.
  */
 package com.example.clasicampsite
 
@@ -14,9 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,11 +33,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.clasicampsite.model.Campsite
 
 /** The admin's list of every campsite. */
 @Composable
 fun AdminCampsitesScreen(navController: NavController) {
-    /** only admins can see this screen. null = still checking with Firestore. */
+    // only admins can see this screen. null = still checking with Firestore.
     val context = LocalContext.current
     var allowed by remember { mutableStateOf<Boolean?>(null) }
     LaunchedEffect(Unit) {
@@ -46,6 +50,7 @@ fun AdminCampsitesScreen(navController: NavController) {
     }
 
     val viewModel: AdminCampsitesViewModel = viewModel()
+    var campsiteToRemove by remember { mutableStateOf<Campsite?>(null) }
 
     Column(
         modifier = Modifier.fillMaxSize().statusBarsPadding().padding(16.dp),
@@ -84,10 +89,41 @@ fun AdminCampsitesScreen(navController: NavController) {
                             Text("Max occupancy: ${campsite.maxOccupancy}")
                             Text("Rating: ${campsite.rating}")
                             Text("Available: ${campsite.availableFrom} to ${campsite.availableTo}")
+                            Button(
+                                onClick = { campsiteToRemove = campsite },
+                                modifier = Modifier.testTag("removeCampsiteButton_${campsite.id}"),
+                            ) {
+                                Text("Remove campsite")
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    val target = campsiteToRemove
+    if (target != null) {
+        AlertDialog(
+            onDismissRequest = { campsiteToRemove = null },
+            title = { Text("Remove campsite?") },
+            text = { Text("This deletes \"${target.name.ifBlank { "(no name)" }}\". It can't be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.removeCampsite(target)
+                        campsiteToRemove = null
+                    },
+                    modifier = Modifier.testTag("confirmRemoveCampsiteButton"),
+                ) {
+                    Text("Remove")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { campsiteToRemove = null }) {
+                    Text("Cancel")
+                }
+            },
+        )
     }
 }
