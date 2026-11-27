@@ -22,14 +22,14 @@
 
 ## Team Members
 
-| Name | GitHub Username | CCID | Main Area (Part 3) | 
-| :--- | :--- | :--- | :--- |
-| Emery Theroux | [emery-collab](https://github.com/emery-collab) | eptherou | Owner lotteries | 
-| Evan Rosenblood | [EvanRosenblood](https://github.com/EvanRosenblood) | ewrosenb | Setup, profile, admin profiles |
-| Keya Modi | [Keya_M](https://github.com/KeyaModi) | kmodi1 | Lottery engine, waitlist, notifications |
-| Dhavanil Patel | [dhavanilp](https://github.com/dhavanilp) | dhavanil |Finding campsites, admin campsites |
-| Manush Patel | [Manush10](https://github.com/Manush10) | manush | Booking and reservations |
-| Steve Thomas | [SteveThomas3269](https://github.com/SteveThomas3269) | ssthoma1 | Owner campsites (register, view/edit, My Campsites) |
+| Name | GitHub Username | Main Area (Part 3) |
+| :--- | :--- | :--- |
+| Emery Theroux | [emery-collab](https://github.com/emery-collab) | Owner lotteries |
+| Evan Rosenblood | [EvanRosenblood](https://github.com/EvanRosenblood) | Setup, profile, admin profiles |
+| Keya Modi | [Keya_M](https://github.com/KeyaModi) | Lottery engine, waitlist, notifications |
+| Dhavanil Patel | [dhavanilp](https://github.com/dhavanilp) | Finding campsites, admin campsites |
+| Manush Patel | [Manush10](https://github.com/Manush10) | Booking and reservations |
+| Steve Thomas | [SteveThomas3269](https://github.com/SteveThomas3269) | Owner campsites (register, view/edit, My Campsites) |
 
 ## Project Documentation
 These documents cover the design, planning, and structure of Clasic-events.
@@ -46,12 +46,6 @@ How users move through the app and interact with each screen and feature.
 Our main classes, with their responsibilities and collaborators. These guided our object-oriented design.
 * [View CRC Cards](https://github.com/CMPUT301F26clasic/Clasic-events/wiki/CRC-Cards)
 
-### UML Diagram
-The following UML class diagram illustrates the structure and architecture of the Clasic-events application. It provides a visual representation of the classes within the application, their attributes, methods, and relationships.
-
-The diagram helps demonstrate how the different components of the application interact and how the overall system is organized.
-* [View UML Diagram](https://github.com/CMPUT301F26clasic/Clasic-events/wiki/UML-Diagram)
-
 ## Project Wiki
 For design decisions, implementation details, and development notes, see our [GitHub Wiki](https://github.com/CMPUT301F26clasic/Clasic-events/wiki).
 
@@ -62,7 +56,7 @@ Our team used AI tools to help with parts of this project. All AI-assisted code 
 
 | Tool | How it was used |
 | :--- | :--- |
-| Claude (Anthropic) | Help writing tests; resolving Git merge conflicts; explaining Firestore usage, Creating UML diagram. |
+| Claude (Anthropic) | Help writing tests; resolving Git merge conflicts; explaining Firestore usage |
 | ChatGPT (OpenAI) | Suggested UI and function layouts for some screens (e.g. Register Campsite screen) |
 | GitHub Copilot | Code autocompletion in Android Studio |
 | Gemini (Google) | Debugging build and Gradle errors, and help with task division and planning for code sprints |
