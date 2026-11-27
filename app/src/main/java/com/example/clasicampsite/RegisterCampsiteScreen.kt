@@ -39,6 +39,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import androidx.compose.ui.platform.LocalContext
 //  The following ui and function layouts are from, ChatGPT "Provide a layout for my registercampsitescreen", 2026-11-06
 
 @Composable
@@ -46,6 +47,8 @@ fun RegisterCampsiteScreen(navController: NavController) {
 
     val database = remember { DatabaseController() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val ownerId = remember { AdminAccess.deviceId(context) }
 
     // Form fields
     var name by remember { mutableStateOf("") }
@@ -173,6 +176,7 @@ fun RegisterCampsiteScreen(navController: NavController) {
 
                     else -> {
                         val campsite = Campsite(
+                            ownerId = ownerId,
                             name = name.trim(),
                             location = location.trim(),
                             maxOccupancy = occupancy,

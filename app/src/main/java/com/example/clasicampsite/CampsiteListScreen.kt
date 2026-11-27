@@ -40,6 +40,8 @@ import com.example.clasicampsite.model.CampsiteFilter
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.Instant
+import androidx.compose.runtime.LaunchedEffect
+import com.example.clasicampsite.data.DatabaseController
 
 
 private val sampleCampsites = listOf(
@@ -82,11 +84,24 @@ internal fun Campsite.matchesFilter(filter: CampsiteFilter): Boolean {
 }
 
 @Composable
-fun CampsiteListScreen(navController: NavController) {
+fun CampsiteListScreen(navController: NavController,
+                       dbController: DatabaseController = remember { DatabaseController() }) {
+
     var searchQuery by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(CampsiteFilter()) }
     var showFilterDialog by remember { mutableStateOf(false) }
-
+    var campsites by remember { mutableStateOf(sampleCampsites) }
+    LaunchedEffect(Unit) {
+        try {
+            val loaded = dbController.getCampsites()
+            if (loaded.isNotEmpty()) {
+                campsites = loaded
+            }
+        } catch (_: Exception) {
+            // Keep sampleCampsites if Firestore cannot be reached
+        }
+    }
+    
     val filteredCampsites = remember(searchQuery, filter) {
         sampleCampsites.filter { it.matchesSearch(searchQuery) && it.matchesFilter(filter) }
     }
@@ -144,7 +159,7 @@ fun CampsiteListScreen(navController: NavController) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)
-                            .clickable { navController.navigate("campsite_detail") }
+                            .clickable { navController.navigate("campsite_detail/${campsite.id}") }
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text(text = campsite.name, fontSize = 18.sp)

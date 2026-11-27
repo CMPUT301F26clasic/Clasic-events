@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.clasicampsite"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
@@ -61,11 +61,4 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.navigation:navigation-compose:2.9.8")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
-}
-
-android {
-    defaultConfig {
-        minSdk = 26
-    }
 }
