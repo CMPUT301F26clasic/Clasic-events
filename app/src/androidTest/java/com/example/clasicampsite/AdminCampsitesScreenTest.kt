@@ -125,7 +125,7 @@ class AdminCampsitesScreenTest {
         composeRule.onNodeWithTag("campsiteName").assertIsDisplayed()
     }
 
-    /** Admin can remove a campsite after confirming, and it is deleted from Firestore. */
+    /** US 03.01.01: admin can remove a campsite after confirming, and it is deleted from Firestore. */
     @Test
     fun removeCampsiteAsksFirstThenRemovesIt() {
         openAdminCampsites()

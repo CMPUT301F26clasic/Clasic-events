@@ -2,8 +2,9 @@
  * Purpose: Lets a campsite owner set the number of lottery winners, view the waitlist,
  * and draw/notify entrants (US 02.04.05, US 02.09.01, #5). Drawing saves the winners in a
  * lottery so they can pick their dates (US 02.05.01).
- * Outstanding issues: The owner draws by pressing a button. Drawing automatically when the
- * registration period ends is not done.
+ * The owner can also set a last day to join; once it passes, the lottery is drawn
+ * automatically the next time someone opens the campsite (US 02.05.01).
+ * Outstanding issues: The automatic draw waits until someone opens the campsite.
  */
 package com.example.clasicampsite
 
@@ -60,6 +61,8 @@ fun LotteryManagementScreen(
     dbController: DatabaseController = remember { DatabaseController() }) {
     var campsiteName by remember { mutableStateOf("") }
     var winnerCount by remember { mutableStateOf("") }
+    /** last day to join, typed like 2027-05-01 */
+    var deadlineText by remember { mutableStateOf("") }
     var entrantNames by remember { mutableStateOf<List<String>>(emptyList()) }
 
     var isLoading by remember { mutableStateOf(true) }
@@ -90,6 +93,7 @@ fun LotteryManagementScreen(
                 campsite = loaded
                 campsiteName = loaded.name
                 winnerCount = loaded.numberOfWinners.toString()
+                deadlineText = loaded.lotteryDeadline?.toString() ?: ""
                 drawnLottery = dbController.getLottery(campsiteId)
 
                 val entrantIds = dbController.getLotteryEntrantIds(campsiteId)
@@ -180,6 +184,46 @@ fun LotteryManagementScreen(
             ) {
                 Text(if (isSaving) "Saving..." else "Save Winner Count")
             }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            /** last day to join; after it, the lottery draws itself (US 02.05.01) */
+            OutlinedTextField(
+                value = deadlineText,
+                onValueChange = {
+                    deadlineText = it.filter { c -> c.isDigit() || c == '-' }.take(10)
+                    successMessage = ""
+                    actionError = null
+                },
+                label = { Text("Last day to join (YYYY-MM-DD)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().testTag("deadlineField"))
+
+            Button(
+                enabled = !isSaving,
+                onClick = {
+                    val deadline = runCatching { LocalDate.parse(deadlineText) }.getOrNull()
+                    if (deadline == null) {
+                        actionError = "Enter the last day to join like 2027-05-01."
+                    } else {
+                        coroutineScope.launch {
+                            try {
+                                isSaving = true
+                                actionError = null
+                                dbController.updateLotteryDeadline(campsiteId, deadline)
+                                successMessage = "Lottery closes after $deadline."
+                            } catch (e: Exception) {
+                                actionError = "Failed to save the deadline: ${e.localizedMessage}"
+                            } finally {
+                                isSaving = false
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.testTag("saveDeadlineButton")
+            ) {
+                Text("Save Deadline")
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             val alreadyDrawn = drawnLottery?.hasBeenDrawn() == true
@@ -213,6 +257,7 @@ fun LotteryManagementScreen(
                                     /** save the winners first, so they can book even if a notification fails */
                                     val lottery = Lottery.forCampsite(site, pickedWinners, today)
                                     dbController.saveLottery(lottery)
+                                    dbController.markLotteryResolved(campsiteId, pickedWinners)
                                     drawnLottery = lottery
 
                                     val skipped = dbController.sendLotteryOutcomeNotifications(

@@ -1,3 +1,7 @@
+/**
+ * Purpose: The popup used to write a message between a campsite owner and a camper.
+ * Outstanding issues: None.
+ */
 package com.example.clasicampsite
 
 import androidx.compose.material3.AlertDialog
@@ -12,7 +16,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 
-
+/**
+ * Popup for typing a message of up to 500 characters, used both by owners messaging a guest
+ * (US 02.12.01) and campers messaging an owner (US 01.14.01).
+ *
+ * @param recipientName shown in the title, like "Message Alex"
+ * @param isSending true while the message is being saved, so the buttons are turned off
+ * @param error a message to show if sending failed, or null
+ * @param onSend called with the typed text when Send is tapped
+ * @param onDismiss called when the popup is closed without sending
+ */
 @Composable
 fun MessageReserverDialog(
     recipientName: String,

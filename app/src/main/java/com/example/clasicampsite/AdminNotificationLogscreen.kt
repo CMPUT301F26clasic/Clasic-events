@@ -1,3 +1,8 @@
+/**
+ * Purpose: Admin screen listing every notification the app has sent (US 03.08.01), with a
+ * filter for the messages between owners and campers (US 03.12.01).
+ * Outstanding issues: Loads every notification at once, which is slow with many of them.
+ */
 package com.example.clasicampsite
 
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +22,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,11 +38,29 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * Shows every notification and message sent in the app, newest first, for admins only.
+ * The Owner messages filter shows just the messages between owners and campers.
+ *
+ * @param navController used to go back
+ * @param dbController where the notifications and user names are loaded from
+ */
 @Composable
 fun AdminNotificationLogsScreen(
     navController: NavController,
     dbController: DatabaseController = remember { DatabaseController() }
 ) {
+    /** only admins can see this screen. null = still checking with Firestore. */
+    val context = LocalContext.current
+    var allowed by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(Unit) {
+        allowed = AdminAccess.isAdmin(context)
+    }
+    if (allowed != true) {
+        AdminOnlyMessage(navController, checking = allowed == null)
+        return
+    }
+
     var logs by remember { mutableStateOf<List<NotificationLog>>(emptyList()) }
     var names by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(true) }

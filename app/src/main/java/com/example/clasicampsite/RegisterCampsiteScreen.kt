@@ -47,7 +47,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
-import androidx.compose.ui.platform.LocalContext
 /**
  * The following ui and function layouts are from, ChatGPT "Provide a layout for my registercampsitescreen", 2026-11-06
  */

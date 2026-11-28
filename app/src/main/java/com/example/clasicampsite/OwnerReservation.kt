@@ -1,3 +1,8 @@
+/**
+ * Purpose: Lets a campsite owner see who has reserved their campsite and send any of those
+ * guests a message (US 02.12.01).
+ * Outstanding issues: Each guest is listed once per reservation.
+ */
 package com.example.clasicampsite
 
 import android.provider.Settings
@@ -53,7 +58,8 @@ fun OwnerReservationsScreen(
     var names by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var loadError by remember { mutableStateOf<String?>(null) }
 
-    var messageTarget by remember { mutableStateOf<Pair<String, String>?>(null) } // id to name
+    /** the guest being messaged, as their device ID and name */
+    var messageTarget by remember { mutableStateOf<Pair<String, String>?>(null) }
     var isSending by remember { mutableStateOf(false) }
     var sendError by remember { mutableStateOf<String?>(null) }
 

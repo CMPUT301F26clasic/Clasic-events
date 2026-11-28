@@ -1,3 +1,7 @@
+/**
+ * Purpose: One entry in the admin's notification log (US 03.08.01, US 03.12.01).
+ * Outstanding issues: None.
+ */
 package com.example.clasicampsite.model
 
 /**

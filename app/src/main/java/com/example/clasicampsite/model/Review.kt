@@ -1,3 +1,7 @@
+/**
+ * Purpose: A written review of a campsite (US 01.13.02).
+ * Outstanding issues: None.
+ */
 package com.example.clasicampsite.model
 
 /**
