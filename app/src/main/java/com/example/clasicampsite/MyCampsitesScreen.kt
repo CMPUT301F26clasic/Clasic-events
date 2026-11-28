@@ -85,6 +85,7 @@ fun MyCampsitesScreen(navController: NavController) {
                     OwnerCampsiteRow(
                         campsite = campsite,
                         onClick = { navController.navigate("campsite_form/${campsite.id}") },
+                        onViewDetails = { navController.navigate("campsite_detail/${campsite.id}") },
                         onViewSchedule = { navController.navigate("owner_schedule/${campsite.id}") },
                         onManageLottery = { navController.navigate("manage_lottery/${campsite.id}") },
                     )
@@ -106,6 +107,7 @@ fun MyCampsitesScreen(navController: NavController) {
 private fun OwnerCampsiteRow(
     campsite: Campsite,
     onClick: () -> Unit,
+    onViewDetails: () -> Unit,
     onViewSchedule: () -> Unit,
     onManageLottery: () -> Unit,
 ) {
@@ -120,6 +122,12 @@ private fun OwnerCampsiteRow(
                 style = MaterialTheme.typography.bodySmall,
             )
             Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = onViewDetails,
+                modifier = Modifier.testTag("viewCampsiteDetailsButton_${campsite.id}"),
+            ) {
+                Text("View Details & QR Code")
+            }
             Button(
                 onClick = onViewSchedule,
                 modifier = Modifier.testTag("viewScheduleButton"),

@@ -41,7 +41,9 @@ data class Campsite(
     var tags: List<String> = emptyList(),
     var image: String = "",
     var latitude: Double? = null,
-    var longitude: Double? = null
+    var longitude: Double? = null,
+    /** Optional maximum number of entrants on this campsite lottery waitlist. Null means unlimited. */
+    var lotteryCapacity: Int? = null
 )
 
 /**

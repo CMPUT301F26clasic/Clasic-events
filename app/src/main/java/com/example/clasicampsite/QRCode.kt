@@ -1,9 +1,40 @@
 /**
- * Purpose: Placeholder for scanning and generating campsite QR codes (US 01.12.01, US 02.02.01).
- * Outstanding issues: Not implemented yet.
+ * Purpose: Generates a unique QR code linking to a campsite's details (US 02.02.01).
  */
 package com.example.clasicampsite
 
-/** Placeholder for campsite QR codes. Not used yet. */
-class QRCode {
+import android.graphics.Bitmap
+import android.net.Uri
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
+
+/** QR code helpers for campsite detail links. */
+object QRCode {
+    /** Deep link handled by the app's campsite detail navigation destination. */
+    fun campsiteUri(campsiteId: String): String =
+        Uri.Builder()
+            .scheme("clasicampsite")
+            .authority("campsite")
+            .appendPath(campsiteId)
+            .build()
+            .toString()
+
+    /** Encodes [content] as a black-and-white QR bitmap. */
+    fun generate(content: String, size: Int = 512): Bitmap {
+        val matrix = QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size)
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                bitmap.setPixel(
+                    x,
+                    y,
+                    if (matrix.get(x, y)) android.graphics.Color.BLACK
+                    else android.graphics.Color.WHITE
+                )
+            }
+        }
+
+        return bitmap
+    }
 }

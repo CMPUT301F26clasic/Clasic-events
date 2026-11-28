@@ -60,7 +60,10 @@ fun LotteryManagementScreen(
     dbController: DatabaseController = remember { DatabaseController() }) {
     var campsiteName by remember { mutableStateOf("") }
     var winnerCount by remember { mutableStateOf("") }
+    var capacityText by remember { mutableStateOf("") }
+    var capacityMessage by remember { mutableStateOf("") }
     var entrantNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    var entrantCount by remember { mutableStateOf(0) }
 
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
@@ -90,9 +93,11 @@ fun LotteryManagementScreen(
                 campsite = loaded
                 campsiteName = loaded.name
                 winnerCount = loaded.numberOfWinners.toString()
+                capacityText = loaded.lotteryCapacity?.toString() ?: ""
                 drawnLottery = dbController.getLottery(campsiteId)
 
                 val entrants = dbController.getLotteryEntrants(campsiteId)
+                entrantCount = entrants.size
 
                 entrantNames = entrants.map { entrant ->
                     val user = dbController.getUser(entrant.userId)
@@ -182,6 +187,76 @@ fun LotteryManagementScreen(
             ) {
                 Text(if (isSaving) "Saving..." else "Save Winner Count")
             }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Lottery Waitlist Capacity",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Optional. Leave blank for unlimited entrants.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            OutlinedTextField(
+                value = capacityText,
+                onValueChange = {
+                    capacityText = it.filter(Char::isDigit)
+                    capacityMessage = ""
+                    actionError = null
+                },
+                label = { Text("Maximum entrants (optional)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().testTag("lotteryCapacityField")
+            )
+
+            Button(
+                enabled = !isSaving,
+                onClick = {
+                    val capacity = if (capacityText.isBlank()) null else capacityText.toIntOrNull()
+
+                    if (capacityText.isNotBlank() && (capacity == null || capacity <= 0)) {
+                        capacityMessage = "Enter a capacity greater than zero, or leave it blank."
+                    } else {
+                        coroutineScope.launch {
+                            try {
+                                isSaving = true
+                                capacityMessage = ""
+                                actionError = null
+                                dbController.updateLotteryCapacity(campsiteId, capacity)
+                                campsite = campsite?.copy(lotteryCapacity = capacity)
+                                capacityMessage = if (capacity == null) {
+                                    "Waitlist capacity removed; unlimited entrants allowed."
+                                } else {
+                                    "Waitlist capacity updated to $capacity."
+                                }
+                            } catch (e: Exception) {
+                                capacityMessage = e.localizedMessage
+                                    ?: "Failed to update waitlist capacity."
+                            } finally {
+                                isSaving = false
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.testTag("saveLotteryCapacityButton")
+            ) {
+                Text(if (isSaving) "Saving..." else "Save Waitlist Capacity")
+            }
+
+            if (capacityMessage.isNotBlank()) {
+                Text(
+                    text = capacityMessage,
+                    color = if (capacityMessage.startsWith("Waitlist capacity") ||
+                        capacityMessage.startsWith("Waitlist capacity removed")) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
+                    modifier = Modifier.testTag("lotteryCapacityMessage")
+                )
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             val alreadyDrawn = drawnLottery?.hasBeenDrawn() == true
@@ -277,8 +352,12 @@ fun LotteryManagementScreen(
             )
 
             Text(
-                text = "${entrantNames.size} entrants",
+                text = "$entrantCount entrants",
                 style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Capacity: ${campsite?.lotteryCapacity?.toString() ?: "Unlimited"}",
+                style = MaterialTheme.typography.bodySmall
             )
 
             Spacer(modifier = Modifier.height(8.dp))

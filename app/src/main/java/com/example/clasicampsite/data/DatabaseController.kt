@@ -121,6 +121,7 @@ class DatabaseController {
             "longitude" to campsite.longitude,
             "rating" to campsite.rating,
             "numberOfWinners" to campsite.numberOfWinners,
+            "lotteryCapacity" to campsite.lotteryCapacity,
             "availableFrom" to campsite.availableFrom.toString(),
             "availableTo" to campsite.availableTo.toString()
         )
@@ -190,6 +191,7 @@ class DatabaseController {
         longitude = getDouble("longitude"),
         rating = getDouble("rating") ?: 0.0,
         numberOfWinners = getLong("numberOfWinners")?.toInt() ?: 0,
+        lotteryCapacity = getLong("lotteryCapacity")?.toInt(),
         availableFrom = runCatching { LocalDate.parse(getString("availableFrom")) }
             .getOrDefault(DEFAULT_DATE),
         availableTo = runCatching { LocalDate.parse(getString("availableTo")) }
@@ -423,6 +425,30 @@ class DatabaseController {
         campsites.document(campsiteId).update("numberOfWinners", numberOfWinners).await()
     }
 
+    /**
+     * Sets the optional waitlist capacity. Null means unlimited. A capacity cannot be lowered
+     * below the number of people already entered.
+     */
+    suspend fun updateLotteryCapacity(campsiteId: String, capacity: Int?) {
+        require(capacity == null || capacity > 0) {
+            "Lottery capacity must be greater than zero, or blank for unlimited."
+        }
+
+        val campsiteRef = campsites.document(campsiteId)
+        val entrantsRef = campsiteRef.collection("lottery")
+        val currentEntrants = entrantsRef.get().await().size()
+
+        FirebaseFirestore.getInstance().runTransaction { transaction ->
+            val campsiteSnapshot = transaction.get(campsiteRef)
+            require(campsiteSnapshot.exists()) { "Campsite not found." }
+            require(capacity == null || capacity >= currentEntrants) {
+                "Capacity cannot be lower than the current waitlist size ($currentEntrants)."
+            }
+
+            transaction.update(campsiteRef, "lotteryCapacity", capacity)
+        }.await()
+    }
+
     /** Gets the campsite name and lottery winner count without loading date fields. */
     suspend fun getCampsiteLotteryDetails(campsiteId: String): Pair<String, Int>? {
         val document = campsites.document(campsiteId).get().await()
@@ -583,13 +609,42 @@ class DatabaseController {
      */
     suspend fun joinLottery(campsiteId: String, userId: String) {
         val site = getCampsite(campsiteId)
-        require(site == null || site.ownerId != userId) {
+        require(site != null) { "Campsite not found." }
+        require(site.ownerId != userId) {
             "Owners cannot join their own campsite's lottery."
         }
         require(!hasLotteryBeenDrawn(campsiteId)) {
             "This lottery has already been drawn."
         }
-        saveLotteryEntrant(LotteryEntrant(campsiteId = campsiteId, userId = userId))
+
+        val campsiteRef = campsites.document(campsiteId)
+        val entrantsRef = campsiteRef.collection("lottery")
+        val entrantRef = entrantsRef.document(userId)
+        val currentEntrants = entrantsRef.get().await().size()
+
+        FirebaseFirestore.getInstance().runTransaction { transaction ->
+            val campsiteSnapshot = transaction.get(campsiteRef)
+            val existingEntry = transaction.get(entrantRef)
+
+            if (existingEntry.exists()) {
+                return@runTransaction false
+            }
+
+            val capacity = campsiteSnapshot.getLong("lotteryCapacity")?.toInt()
+
+            if (capacity != null && currentEntrants >= capacity) {
+                throw IllegalStateException("This lottery waitlist is full.")
+            }
+
+            transaction.set(
+                entrantRef,
+                mapOf(
+                    "userId" to userId,
+                    "joinedAt" to FieldValue.serverTimestamp()
+                )
+            )
+            true
+        }.await()
     }
     /**
      * Returns true if winners have already been drawn for [campsiteId] (either in its own
