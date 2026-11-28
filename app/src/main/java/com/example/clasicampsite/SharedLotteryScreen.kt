@@ -46,6 +46,7 @@ import com.example.clasicampsite.model.Lottery
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
+
 /**
  * Screen where a campsite owner creates a shared lottery across multiple campsites.
  *
@@ -74,6 +75,8 @@ fun SharedLotteryScreen(
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf("") }
+    var existingLotteries by remember { mutableStateOf<List<Lottery>>(emptyList()) }
+    var drawingLotteryId by remember { mutableStateOf<String?>(null) }
 
     /** Load all campsites belonging to this owner so they can pick which ones share the lottery. */
     LaunchedEffect(ownerId) {
@@ -82,6 +85,7 @@ fun SharedLotteryScreen(
             errorMessage = null
             ownedCampsites = dbController.getCampsitesByOwner(ownerId)
                 .sortedBy { it.name.lowercase() }
+            existingLotteries = dbController.getSharedLotteriesForCampsites(ownedCampsites.map { it.id })
         } catch (e: Exception) {
             errorMessage = "Failed to load your campsites: ${e.localizedMessage}"
         } finally {
@@ -220,6 +224,9 @@ fun SharedLotteryScreen(
                                         availableDates = parsedDates.distinct().sorted(),
                                     )
                                     dbController.createSharedLottery(newLottery)
+                                    existingLotteries = dbController.getSharedLotteriesForCampsites(
+                                        ownedCampsites.map { it.id }
+                                    )
                                     successMessage = "Shared lottery created for ${selectedIds.size} campsites!"
                                 } catch (e: Exception) {
                                     errorMessage = "Failed to create shared lottery: ${e.localizedMessage}"
@@ -233,6 +240,60 @@ fun SharedLotteryScreen(
                 modifier = Modifier.fillMaxWidth().testTag("createSharedLotteryButton"),
             ) {
                 Text(if (isSaving) "Creating..." else "Create Shared Lottery")
+            }
+            if (existingLotteries.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Your Shared Lotteries",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                existingLotteries.forEach { lottery ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("sharedLotteryItem_${lottery.id}"),
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(lottery.title, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "${lottery.campsiteIds.size} campsites · ${lottery.winners.size} winner(s) drawn",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Button(
+                                enabled = drawingLotteryId == null,
+                                onClick = {
+                                    coroutineScope.launch {
+                                        try {
+                                            drawingLotteryId = lottery.id
+                                            errorMessage = null
+                                            val winners = dbController.drawSharedLotteryWinners(
+                                                lottery = lottery,
+                                                winnerCount = lottery.campsiteIds.size,
+                                            )
+                                            existingLotteries = existingLotteries.map {
+                                                if (it.id == lottery.id) it.copy(winners = winners) else it
+                                            }
+                                            successMessage = if (winners.isEmpty()) {
+                                                "No entrants have joined any campsite in ${lottery.title} yet."
+                                            } else {
+                                                "Drew ${winners.size} winner(s) for ${lottery.title}!"
+                                            }
+                                        } catch (e: Exception) {
+                                            errorMessage = "Failed to draw winners: ${e.localizedMessage}"
+                                        } finally {
+                                            drawingLotteryId = null
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.testTag("drawSharedLottery_${lottery.id}"),
+                            ) {
+                                Text(if (drawingLotteryId == lottery.id) "Drawing..." else "Draw & Notify Winners")
+                            }
+                        }
+                    }
+                }
             }
         }
     }

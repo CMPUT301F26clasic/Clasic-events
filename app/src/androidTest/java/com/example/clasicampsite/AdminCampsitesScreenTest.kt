@@ -138,4 +138,36 @@ class AdminCampsitesScreenTest {
         val saved = runBlocking { DatabaseController().getCampsite(testId) }
         assertNull(saved)
     }
+    /** Deleting a campsite also removes its waitlist, ratings, reservations, and drawn lottery. */
+    @Test
+    fun deleteCampsiteCleansUpRelatedData() = runBlocking {
+        val db = DatabaseController()
+        db.joinLottery(testId, "cleanup-entrant")
+        db.rateCampsite(testId, "cleanup-rater", 5)
+        db.saveReservation(
+            com.example.clasicampsite.model.Reservation(
+                id = "cleanup-res",
+                campsiteId = testId,
+                userId = "cleanup-entrant",
+                dates = listOf("2027-07-01"),
+            )
+        )
+        db.saveLottery(
+            com.example.clasicampsite.model.Lottery(
+                id = testId,
+                title = testName,
+                campsiteIds = listOf(testId),
+                winners = listOf("cleanup-entrant"),
+                availableDates = listOf("2027-07-01"),
+            )
+        )
+
+        db.deleteCampsite(testId)
+
+        assertNull(db.getCampsite(testId))
+        assertNull(db.getLottery(testId))
+        assert(db.getReservationsForCampsite(testId).isEmpty())
+        assert(db.getLotteryEntrants(testId).isEmpty())
+        assertNull(db.getUserRating(testId, "cleanup-rater"))
+    }
 }

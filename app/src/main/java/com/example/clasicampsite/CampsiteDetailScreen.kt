@@ -71,6 +71,7 @@ fun CampsiteDetailScreen(
     var showRating by remember { mutableStateOf<Double?>(null) }
     var rating by remember { mutableStateOf(false) }
     var ratingError by remember { mutableStateOf<String?>(null) }
+    var lotteryDrawn by remember { mutableStateOf(false) }
 
     /** Fetch details from Firestore when campsiteId changes */
     LaunchedEffect(campsiteId) {
@@ -83,7 +84,11 @@ fun CampsiteDetailScreen(
                     showRating = fetched.rating
                     alreadyinLottery =
                         userId != null && dbController.isUserInLottery(campsiteId, userId)
-                    userrating = dbController.getUserRating(campsiteId, userId)}
+
+                    lotteryDrawn = dbController.hasLotteryBeenDrawn(campsiteId)
+                    userrating = dbController.getUserRating(campsiteId, userId)
+
+                }
                 else {
                     errorMessage = "Campsite not found."
                 }
@@ -173,28 +178,47 @@ fun CampsiteDetailScreen(
                     }
                 }
             }
+            val isOwner = site.ownerId.isNotBlank() && site.ownerId == userId
 
-            if (alreadyinLottery) {
-                OutlinedButton(
-                    onClick = onToggle,
-                    enabled = !updateLottery && userId != null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("leaveLotteryButton")
-                ) {
-                    Text(if (updateLottery) "Leaving..." else "Leave Lottery")
+            when {
+                isOwner -> {
+                    Text(
+                        text = "You own this campsite.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.testTag("ownerLotteryMessage"),
+                    )
                 }
-            } else {
-                Button(
-                    onClick = onToggle,
-                    enabled = !updateLottery && userId != null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("joinLotteryButton")
-                ) {
-                    Text(if (updateLottery) "Joining..." else "Join Lottery")
+                lotteryDrawn -> {
+                    Text(
+                        text = "This lottery has already been drawn.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.testTag("lotteryClosedText"),
+                    )
+                }
+                alreadyinLottery -> {
+                    OutlinedButton(
+                        onClick = onToggle,
+                        enabled = !updateLottery && userId != null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("leaveLotteryButton")
+                    ) {
+                        Text(if (updateLottery) "Leaving..." else "Leave Lottery")
+                    }
+                }
+                else -> {
+                    Button(
+                        onClick = onToggle,
+                        enabled = !updateLottery && userId != null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("joinLotteryButton")
+                    ) {
+                        Text(if (updateLottery) "Joining..." else "Join Lottery")
+                    }
                 }
             }
+
 
             lotteryError?.let { message ->
                 Text(

@@ -49,16 +49,20 @@ class DatabaseController {
         users.document(user.id).set(user).await()
     }
 
-    /** Deletes the user saved under [deviceId] */
+    /** Deletes the user saved under [deviceId] and removes them from any campsite waitlists */
     suspend fun deleteUser(deviceId: String) {
+        val allSites = campsites.get().await()
+        for (site in allSites.documents) {
+            site.reference.collection("lottery").document(deviceId).delete().await()
+        }
         users.document(deviceId).delete().await()
     }
 
-    /** Deletes every campsite owned by [ownerId] (US 03.07.01) */
+    /** Deletes every campsite owned by [ownerId] and all of their related data (US 03.07.01) */
     suspend fun deleteCampsitesByOwner(ownerId: String) {
         val snapshot = campsites.whereEqualTo("ownerId", ownerId).get().await()
         for (document in snapshot.documents) {
-            document.reference.delete().await()
+            deleteCampsite(document.id)
         }
     }
 
@@ -124,9 +128,51 @@ class DatabaseController {
         document.set(campsiteData).await()
     }
 
-    /** Deletes the campsite with [campsiteId] from Firestore */
+    /**
+     * Deletes the campsite with [campsiteId] along with its waitlist, ratings, reservations,
+     * and any lotteries referencing it so no orphaned bookings or "You won" entries remain.
+     */
     suspend fun deleteCampsite(campsiteId: String) {
-        campsites.document(campsiteId).delete().await()
+        val campsiteRef = campsites.document(campsiteId)
+
+        // 1. Delete waitlist entrants subcollection
+        val waitlistDocs = campsiteRef.collection("lottery").get().await()
+        for (doc in waitlistDocs.documents) {
+            doc.reference.delete().await()
+        }
+
+        // 2. Delete ratings/reviews subcollection
+        val ratingDocs = campsiteRef.collection("ratings").get().await()
+        for (doc in ratingDocs.documents) {
+            doc.reference.delete().await()
+        }
+
+        // 3. Delete all reservations for this campsite
+        val reservationDocs = reservations.whereEqualTo("campsiteId", campsiteId).get().await()
+        for (doc in reservationDocs.documents) {
+            doc.reference.delete().await()
+        }
+
+        // 4. Delete single-campsite drawn lottery (stored under lotteries/{campsiteId})
+        lotteries.document(campsiteId).delete().await()
+
+        // 5. Clean up any lotteries referencing this campsite in campsiteIds
+        val linkedLotteries = lotteries.whereArrayContains("campsiteIds", campsiteId).get().await()
+        for (doc in linkedLotteries.documents) {
+            val remainingIds = (doc.get("campsiteIds") as? List<*>)
+                ?.filterIsInstance<String>()
+                ?.filter { it != campsiteId }
+                ?: emptyList()
+
+            if (remainingIds.isEmpty()) {
+                doc.reference.delete().await()
+            } else {
+                doc.reference.update("campsiteIds", FieldValue.arrayRemove(campsiteId)).await()
+            }
+        }
+
+        // 6. Delete the campsite document itself
+        campsiteRef.delete().await()
     }
 
     /** Builds a Campsite from a Firestore document, reading dates from "yyyy-MM-dd" text. */
@@ -244,9 +290,7 @@ class DatabaseController {
     }
 
     /** Sends [message] to the user with [deviceId] as an in-app notification (US 01.05.01) */
-    /** Sends [message] to the user with [deviceId] as an in-app notification if enabled (US 01.05.01, US 01.10.01) */
     suspend fun sendNotification(deviceId: String, message: String) {
-        if (!getUser(deviceId).notificationsEnabled) return
         val notification = hashMapOf(
             "userId" to deviceId,
             "message" to message,
@@ -254,6 +298,7 @@ class DatabaseController {
         )
         notifications.add(notification).await()
     }
+
     /**
      * One in-app notification shown to a user.
      *
@@ -443,6 +488,46 @@ class DatabaseController {
         }
     }
 
+    /** Fetches all shared lotteries that include any of [campsiteIds] (#69) */
+    suspend fun getSharedLotteriesForCampsites(campsiteIds: List<String>): List<Lottery> {
+        val found = mutableMapOf<String, Lottery>()
+        for (siteId in campsiteIds.distinct()) {
+            for (lottery in getLotteriesForCampsite(siteId)) {
+                if (lottery.hasMultipleCampsites()) {
+                    found[lottery.id] = lottery
+                }
+            }
+        }
+        return found.values.toList()
+    }
+
+    /** Draws up to [winnerCount] winners from all entrants across [lottery]'s campsites (#69) */
+    suspend fun drawSharedLotteryWinners(lottery: Lottery, winnerCount: Int): List<String> {
+        val entrantIds = lottery.campsiteIds
+            .flatMap { siteId -> getLotteryEntrants(siteId).map { it.userId } }
+            .filter { it.isNotBlank() }
+            .distinct()
+
+        val pickedWinners = entrantIds.shuffled().take(winnerCount.coerceAtLeast(1))
+        lotteries.document(lottery.id).update("winners", pickedWinners).await()
+
+        sendLotteryOutcomeNotifications(
+            campsiteName = lottery.title.ifBlank { "shared lottery" },
+            entrantUserIds = entrantIds,
+            winnerUserIds = pickedWinners,
+        )
+        return pickedWinners
+    }
+
+    /** Fetches all lotteries won by [deviceId] that they haven't declined yet (#69) */
+    suspend fun getWonLotteriesForUser(deviceId: String): List<Lottery> {
+        val snapshot = lotteries.whereArrayContains("winners", deviceId).get().await()
+        return snapshot.documents
+            .mapNotNull { doc -> doc.toObject(Lottery::class.java)?.apply { id = doc.id } }
+            .filter { it.isWinner(deviceId) }
+    }
+
+
     /** Fetches every rating/review across all campsites for admin moderation (#71) */
     suspend fun getAllCampsiteReviews(): List<CampsiteReview> {
         val allSites = campsites.get().await()
@@ -489,6 +574,31 @@ class DatabaseController {
         campsiteRef.set(mapOf("rating" to newAverage), SetOptions.merge()).await()
         return newAverage
     }
+    /**
+     * Adds a user to a campsite's lottery (US 01.01.06).
+     * Rejects if the user owns the campsite or if the lottery has already been drawn.
+     *
+     * @param campsiteId the campsite's Firestore ID
+     * @param userId the user's device ID
+     */
+    suspend fun joinLottery(campsiteId: String, userId: String) {
+        val site = getCampsite(campsiteId)
+        require(site == null || site.ownerId != userId) {
+            "Owners cannot join their own campsite's lottery."
+        }
+        require(!hasLotteryBeenDrawn(campsiteId)) {
+            "This lottery has already been drawn."
+        }
+        saveLotteryEntrant(LotteryEntrant(campsiteId = campsiteId, userId = userId))
+    }
+    /**
+     * Returns true if winners have already been drawn for [campsiteId] (either in its own
+     * single-campsite lottery or in a shared lottery that includes it).
+     */
+    suspend fun hasLotteryBeenDrawn(campsiteId: String): Boolean {
+        if (getLottery(campsiteId)?.hasBeenDrawn() == true) return true
+        return getLotteriesForCampsite(campsiteId).any { it.hasBeenDrawn() }
+    }
 
     /**
      * Checks if a user has joined a campsite's lottery (US 01.01.06).
@@ -501,16 +611,6 @@ class DatabaseController {
         campsites.document(campsiteId)
             .collection("lottery").document(userId)
             .get().await().exists()
-
-    /**
-     * Adds a user to a campsite's lottery (US 01.01.06).
-     *
-     * @param campsiteId the campsite's Firestore ID
-     * @param userId the user's device ID
-     */
-    suspend fun joinLottery(campsiteId: String, userId: String) {
-        saveLotteryEntrant(LotteryEntrant(campsiteId = campsiteId, userId = userId))
-    }
 
     /**
      * Takes a user out of a campsite's lottery (US 01.01.06).

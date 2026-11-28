@@ -113,4 +113,35 @@ class JoinLotteryTest {
         composeRule.onNodeWithTag("joinLotteryButton").assertIsDisplayed()
         assertFalse(runBlocking { db.isUserInLottery(testId, deviceId) })
     }
+
+    /** Owners cannot join their own campsite's lottery. */
+    @Test
+    fun ownerCannotJoinOwnLottery() {
+        runBlocking {
+            FirebaseFirestore.getInstance().collection("campsites").document(testId)
+                .update("ownerId", deviceId).await()
+        }
+        openDetails()
+        waitForTag("ownerLotteryMessage")
+        composeRule.onNodeWithTag("joinLotteryButton").assertDoesNotExist()
+    }
+
+    /** Once winners are drawn, Join Lottery is closed. */
+    @Test
+    fun cannotJoinAfterLotteryIsDrawn() {
+        runBlocking {
+            db.saveLottery(
+                com.example.clasicampsite.model.Lottery(
+                    id = testId,
+                    title = "Two Jack Lakeside",
+                    campsiteIds = listOf(testId),
+                    winners = listOf("some-winner"),
+                    availableDates = listOf("2027-07-01"),
+                )
+            )
+        }
+        openDetails()
+        waitForTag("lotteryClosedText")
+        composeRule.onNodeWithTag("joinLotteryButton").assertDoesNotExist()
+    }
 }

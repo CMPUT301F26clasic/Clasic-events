@@ -133,4 +133,28 @@ class SharedLotteryTest {
         assertTrue(saved.first().hasMultipleCampsites())
         assertTrue(siteTwoId in saved.first().campsiteIds)
     }
+
+    /** Entrants who join a campsite in a shared lottery can be drawn as winners and book. */
+    @Test
+    fun sharedLotteryCanBeJoinedDrawnAndWon() = runBlocking {
+        val entrantId = "shared_entrant_${UUID.randomUUID()}"
+        db.joinLottery(siteOneId, entrantId)
+
+        val lotteryId = db.createSharedLottery(
+            com.example.clasicampsite.model.Lottery(
+                title = "Winnable Shared Lottery",
+                campsiteIds = listOf(siteOneId, siteTwoId),
+                availableDates = listOf("2027-07-15"),
+            )
+        )
+
+        val created = db.getLottery(lotteryId)!!
+        val winners = db.drawSharedLotteryWinners(created, winnerCount = 1)
+
+        assertTrue(entrantId in winners)
+        val wonByEntrant = db.getWonLotteriesForUser(entrantId)
+        assertTrue(wonByEntrant.any { it.id == lotteryId && it.isWinner(entrantId) })
+
+        db.leaveLottery(siteOneId, entrantId)
+    }
 }
