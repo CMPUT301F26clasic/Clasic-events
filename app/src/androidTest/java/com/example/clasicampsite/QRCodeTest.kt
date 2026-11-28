@@ -1,9 +1,10 @@
-/*
- * Purpose: Tests that campsite QR codes contain a unique deep link to the campsite details.
- * User story:
- * US 02.02.01 As a campsite owner, I want the system to generate a unique QR code that links to the campsite details.
+/**
+ * The following test layout was generated with ChatGPT,
+ * "Create tests for campsite QR codes", 2026-11-28.
  *
- * Outstanding issues: These are instrumented tests because QR generation uses Android Bitmap.
+ * Purpose: Tests that campsite QR codes generate the correct deep link and that
+ * different campsite IDs produce unique QR code contents (US 02.02.01).
+ * Outstanding issues: None.
  */
 
 package com.example.clasicampsite

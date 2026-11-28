@@ -1,4 +1,8 @@
+
 /*
+ * The following test layout was generated with ChatGPT,
+ * "Create tests for lottery capacity", 2026-11-28.
+ *
  * Purpose: Intent tests for updating a campsite lottery listing and its optional waitlist capacity.
  * User stories:
  * US 02.04.06 As a campsite owner, I want to update my campsite lottery listing.
@@ -11,7 +15,7 @@
 package com.example.clasicampsite
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -37,7 +41,7 @@ import java.util.UUID
 class LotteryCapacityTest {
 
     @get:Rule
-    val composeRule = createAndroidComposeRule<MainActivity>()
+    val composeRule = createComposeRule()
 
     private val firestore = FirebaseFirestore.getInstance()
     private val testCampsiteId = "capacity_test_${UUID.randomUUID()}"
@@ -51,38 +55,45 @@ class LotteryCapacityTest {
 
     /** Creates a campsite document for this test. */
     @Before
-    fun createTestCampsite() = runBlocking {
-        firestore.collection("campsites").document(testCampsiteId).set(
-            mapOf(
-                "id" to testCampsiteId,
-                "name" to "Capacity Test Campsite",
-                "ownerId" to "capacity_test_owner",
-                "numberOfWinners" to 2,
-                "availableFrom" to "2026-01-01",
-                "availableTo" to "2026-12-31",
-                "lotteryCapacity" to 5
-            )
-        ).await()
+    fun createTestCampsite(): Unit {
+        runBlocking {
+            firestore.collection("campsites").document(testCampsiteId).set(
+                mapOf(
+                    "id" to testCampsiteId,
+                    "name" to "Capacity Test Campsite",
+                    "ownerId" to "capacity_test_owner",
+                    "numberOfWinners" to 2,
+                    "availableFrom" to "2026-01-01",
+                    "availableTo" to "2026-12-31",
+                    "lotteryCapacity" to 5
+                )
+            ).await()
+        }
     }
 
     /** Deletes this test campsite and its nested lottery entries. */
     @After
-    fun deleteTestData() = runBlocking {
-        val entrants = firestore.collection("campsites")
-            .document(testCampsiteId)
-            .collection("lottery")
-            .get()
-            .await()
+    fun deleteTestData(): Unit {
+        runBlocking {
+            val entrants = firestore.collection("campsites")
+                .document(testCampsiteId)
+                .collection("lottery")
+                .get()
+                .await()
 
-        entrants.documents.forEach { it.reference.delete().await() }
-        firestore.collection("campsites").document(testCampsiteId).delete().await()
+            entrants.documents.forEach { it.reference.delete().await() }
+            firestore.collection("campsites").document(testCampsiteId).delete().await()
+        }
     }
 
     /** Opens the lottery management screen for the test campsite. */
     private fun openLotteryManagementScreen() {
         composeRule.setContent {
             val navController = rememberNavController()
-            LotteryManagementScreen(navController = navController, campsiteId = testCampsiteId)
+            LotteryManagementScreen(
+                navController = navController,
+                campsiteId = testCampsiteId
+            )
         }
 
         waitForText("Manage Lottery")

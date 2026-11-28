@@ -1,8 +1,12 @@
 /**
- * Purpose: Generates a QR code that contains a deep link to a campsite's details page.
- * The QR code allows users to open the campsite in the ClasiCampsite app (US 02.02.01).
- * Outstanding issues: The app must be installed and able to handle the campsite deep link
- * for the QR code to open the details page directly.
+ * The following implementation was generated with ChatGPT,
+ * "Implement QR code generation for campsite details", 2026-11-28.
+ *
+ * Purpose: Generates a QR code containing a deep link to a campsite's details page,
+ * allowing users to scan the code and open the campsite in ClasiCampsite
+ * (US 02.02.01).
+ * Outstanding issues: The app must be installed and able to handle the campsite
+ * deep link for the QR code to open the details page directly.
  */
 package com.example.clasicampsite
 
