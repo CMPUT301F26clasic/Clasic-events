@@ -3,6 +3,9 @@
  * adds the functions for its own data here.
  * Outstanding issues: Booking checks that dates are still free right before saving, but two
  * people booking at the exact same moment could still both succeed (needs a transaction).
+ *
+ * Supports updating campsite lottery listings and managing optional lottery capacity
+ * (US 02.04.06, US 02.04.07).
  */
 package com.example.clasicampsite.data
 

@@ -1,6 +1,7 @@
 /**
  * Purpose: Shows all the campsites an owner has made (US 02.03.01) and has a button
- * to add a new one (US 02.01.01). Tap a campsite to see or edit it.
+ * to add a new one (US 02.01.01). Owners can open campsite details to view its QR code
+ * (US 02.02.01).
  * Outstanding issues: None right now.
  */
 package com.example.clasicampsite

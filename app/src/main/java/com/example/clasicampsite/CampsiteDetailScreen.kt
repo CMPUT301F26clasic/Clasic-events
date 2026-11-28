@@ -1,6 +1,6 @@
 /**
- * Purpose: Displays details for a single campsite and lets users join/leave its lottery
- * or submit a 1-5 star rating.
+ * Purpose: Displays details for a single campsite and lets users join/leave its lottery,
+ * submit a 1-5 star rating, and view the campsite QR code as its owner (US 02.02.01).
  * Outstanding issues: None.
  */
 package com.example.clasicampsite

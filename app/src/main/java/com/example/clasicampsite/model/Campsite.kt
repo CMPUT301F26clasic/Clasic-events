@@ -1,5 +1,6 @@
 /**
- * Purpose: Data model for a campsite listing, stored in the Firestore "campsites" collection.
+ * Purpose: Represents a campsite and stores the information needed to display and manage it,
+ * including its lottery details and optional waitlist capacity (US 02.04.06, US 02.04.07).
  * Outstanding issues: None.
  */
 package com.example.clasicampsite.model

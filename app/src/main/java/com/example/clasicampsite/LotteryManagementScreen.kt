@@ -1,7 +1,8 @@
 /**
- * Purpose: Lets a campsite owner set the number of lottery winners, view the waitlist,
- * and draw/notify entrants (US 02.04.05, US 02.09.01, #5). Drawing saves the winners in a
- * lottery so they can pick their dates (US 02.05.01).
+ * Purpose: Lets a campsite owner update their lottery listing, set the number of winners and
+ * optional waitlist capacity, view the waitlist, and draw/notify entrants
+ * (US 02.04.05, US 02.04.06, US 02.04.07, US 02.09.01, #5).
+ * Drawing saves the winners in a lottery so they can pick their dates (US 02.05.01).
  * Outstanding issues: The owner draws by pressing a button. Drawing automatically when the
  * registration period ends is not done.
  */
@@ -45,14 +46,14 @@ import java.time.LocalDate
 
 /**
  * The following ui and function layouts are from, ChatGPT "Provide a layout for my lotterymanagementscreen", 2026-11-06
- */
-/**
+ *
+ *
  * Screen where a campsite owner manages lottery winner count, draws winners and notifies entrants.
  *
  * @param navController used to go back
  * @param campsiteId the Firestore ID of the campsite whose lottery is managed
  * @param dbController where the campsite, entrants and lottery are loaded from and saved
- */
+ **/
 @Composable
 fun LotteryManagementScreen(
     navController: NavController,

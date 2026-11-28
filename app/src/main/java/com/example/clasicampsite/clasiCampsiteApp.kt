@@ -1,5 +1,6 @@
 /**
- * Purpose: Root navigation graph connecting all screens in the clasiCampsite app.
+ * Purpose: Sets up the app's navigation and routes users to the appropriate screens.
+ * Handles campsite deep links opened through a campsite QR code (US 02.02.01).
  * Outstanding issues: None.
  */
 package com.example.clasicampsite

@@ -1,5 +1,8 @@
 /**
- * Purpose: Generates a unique QR code linking to a campsite's details (US 02.02.01).
+ * Purpose: Generates a QR code that contains a deep link to a campsite's details page.
+ * The QR code allows users to open the campsite in the ClasiCampsite app (US 02.02.01).
+ * Outstanding issues: The app must be installed and able to handle the campsite deep link
+ * for the QR code to open the details page directly.
  */
 package com.example.clasicampsite
 
