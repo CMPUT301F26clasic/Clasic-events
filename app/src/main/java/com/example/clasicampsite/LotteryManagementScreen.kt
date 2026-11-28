@@ -1,7 +1,8 @@
 /**
- * Purpose: Lets a campsite owner set the number of lottery winners, view the waitlist,
- * and draw/notify entrants (US 02.04.05, US 02.09.01, #5). Drawing saves the winners in a
- * lottery so they can pick their dates (US 02.05.01).
+ * Purpose: Lets a campsite owner update their lottery listing, set the number of winners and
+ * optional waitlist capacity, view the waitlist, and draw/notify entrants
+ * (US 02.04.05, US 02.04.06, US 02.04.07, US 02.09.01, #5).
+ * Drawing saves the winners in a lottery so they can pick their dates (US 02.05.01).
  * Outstanding issues: The owner draws by pressing a button. Drawing automatically when the
  * registration period ends is not done.
  */
@@ -45,14 +46,14 @@ import java.time.LocalDate
 
 /**
  * The following ui and function layouts are from, ChatGPT "Provide a layout for my lotterymanagementscreen", 2026-11-06
- */
-/**
+ *
+ *
  * Screen where a campsite owner manages lottery winner count, draws winners and notifies entrants.
  *
  * @param navController used to go back
  * @param campsiteId the Firestore ID of the campsite whose lottery is managed
  * @param dbController where the campsite, entrants and lottery are loaded from and saved
- */
+ **/
 @Composable
 fun LotteryManagementScreen(
     navController: NavController,
@@ -60,7 +61,10 @@ fun LotteryManagementScreen(
     dbController: DatabaseController = remember { DatabaseController() }) {
     var campsiteName by remember { mutableStateOf("") }
     var winnerCount by remember { mutableStateOf("") }
+    var capacityText by remember { mutableStateOf("") }
+    var capacityMessage by remember { mutableStateOf("") }
     var entrantNames by remember { mutableStateOf<List<String>>(emptyList()) }
+    var entrantCount by remember { mutableStateOf(0) }
 
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
@@ -90,9 +94,11 @@ fun LotteryManagementScreen(
                 campsite = loaded
                 campsiteName = loaded.name
                 winnerCount = loaded.numberOfWinners.toString()
+                capacityText = loaded.lotteryCapacity?.toString() ?: ""
                 drawnLottery = dbController.getLottery(campsiteId)
 
                 val entrants = dbController.getLotteryEntrants(campsiteId)
+                entrantCount = entrants.size
 
                 entrantNames = entrants.map { entrant ->
                     val user = dbController.getUser(entrant.userId)
@@ -182,6 +188,76 @@ fun LotteryManagementScreen(
             ) {
                 Text(if (isSaving) "Saving..." else "Save Winner Count")
             }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Lottery Waitlist Capacity",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Optional. Leave blank for unlimited entrants.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            OutlinedTextField(
+                value = capacityText,
+                onValueChange = {
+                    capacityText = it.filter(Char::isDigit)
+                    capacityMessage = ""
+                    actionError = null
+                },
+                label = { Text("Maximum entrants (optional)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().testTag("lotteryCapacityField")
+            )
+
+            Button(
+                enabled = !isSaving,
+                onClick = {
+                    val capacity = if (capacityText.isBlank()) null else capacityText.toIntOrNull()
+
+                    if (capacityText.isNotBlank() && (capacity == null || capacity <= 0)) {
+                        capacityMessage = "Enter a capacity greater than zero, or leave it blank."
+                    } else {
+                        coroutineScope.launch {
+                            try {
+                                isSaving = true
+                                capacityMessage = ""
+                                actionError = null
+                                dbController.updateLotteryCapacity(campsiteId, capacity)
+                                campsite = campsite?.copy(lotteryCapacity = capacity)
+                                capacityMessage = if (capacity == null) {
+                                    "Waitlist capacity removed; unlimited entrants allowed."
+                                } else {
+                                    "Waitlist capacity updated to $capacity."
+                                }
+                            } catch (e: Exception) {
+                                capacityMessage = e.localizedMessage
+                                    ?: "Failed to update waitlist capacity."
+                            } finally {
+                                isSaving = false
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.testTag("saveLotteryCapacityButton")
+            ) {
+                Text(if (isSaving) "Saving..." else "Save Waitlist Capacity")
+            }
+
+            if (capacityMessage.isNotBlank()) {
+                Text(
+                    text = capacityMessage,
+                    color = if (capacityMessage.startsWith("Waitlist capacity") ||
+                        capacityMessage.startsWith("Waitlist capacity removed")) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
+                    modifier = Modifier.testTag("lotteryCapacityMessage")
+                )
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
             val alreadyDrawn = drawnLottery?.hasBeenDrawn() == true
@@ -277,8 +353,12 @@ fun LotteryManagementScreen(
             )
 
             Text(
-                text = "${entrantNames.size} entrants",
+                text = "$entrantCount entrants",
                 style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Capacity: ${campsite?.lotteryCapacity?.toString() ?: "Unlimited"}",
+                style = MaterialTheme.typography.bodySmall
             )
 
             Spacer(modifier = Modifier.height(8.dp))

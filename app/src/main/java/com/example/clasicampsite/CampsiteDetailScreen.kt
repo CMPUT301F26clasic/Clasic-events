@@ -1,13 +1,13 @@
 /**
- * Purpose: Displays details for a single campsite and lets users join/leave its lottery
- * or submit a 1-5 star rating.
+ * Purpose: Displays details for a single campsite and lets users join/leave its lottery,
+ * submit a 1-5 star rating, and view the campsite QR code as its owner (US 02.02.01).
  * Outstanding issues: None.
  */
 package com.example.clasicampsite
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -31,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -72,6 +74,9 @@ fun CampsiteDetailScreen(
     var rating by remember { mutableStateOf(false) }
     var ratingError by remember { mutableStateOf<String?>(null) }
     var lotteryDrawn by remember { mutableStateOf(false) }
+    val campsiteQrBitmap = remember(campsite?.id) {
+        campsite?.id?.takeIf { it.isNotBlank() }?.let { QRCode.generate(QRCode.campsiteUri(it)) }
+    }
 
     /** Fetch details from Firestore when campsiteId changes */
     LaunchedEffect(campsiteId) {
@@ -315,6 +320,24 @@ fun CampsiteDetailScreen(
                             modifier = Modifier.testTag("manageLotteryButton")
                         ) {
                             Text("Manage Lottery")
+                        }
+                        if (campsiteQrBitmap != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Campsite QR Code",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Image(
+                                bitmap = campsiteQrBitmap.asImageBitmap(),
+                                contentDescription = "QR code linking to ${site.name} campsite details",
+                                modifier = Modifier
+                                    .size(220.dp)
+                                    .testTag("campsiteQrCode")
+                            )
+                            Text(
+                                text = "Scan to open this campsite's details in ClasiCampsite.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
                     }
                 }

@@ -1,5 +1,6 @@
 /**
- * Purpose: Root navigation graph connecting all screens in the clasiCampsite app.
+ * Purpose: Sets up the app's navigation and routes users to the appropriate screens.
+ * Handles campsite deep links opened through a campsite QR code (US 02.02.01).
  * Outstanding issues: None.
  */
 package com.example.clasicampsite
@@ -8,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 
 /** Sets up navigation between every screen of the app, starting at Home. */
 @Composable
@@ -37,7 +39,14 @@ fun clasiCampsiteApp() {
         composable("admin_images") { AdminImagesScreen(navController) }
         composable("register_campsite") { RegisterCampsiteScreen(navController) }
 
-        composable("campsite_detail/{campsiteId}") { backStackEntry ->
+        composable(
+            route = "campsite_detail/{campsiteId}",
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = "clasicampsite://campsite/{campsiteId}"
+                }
+            )
+        ) { backStackEntry ->
             val campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
             CampsiteDetailScreen(navController, campsiteId = campsiteId)
         }
