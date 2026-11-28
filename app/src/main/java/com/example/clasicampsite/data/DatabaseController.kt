@@ -9,7 +9,9 @@ package com.example.clasicampsite.data
 import com.example.clasicampsite.model.Campsite
 import com.example.clasicampsite.model.Lottery
 import com.example.clasicampsite.model.LotteryEntrant
+import com.example.clasicampsite.model.NotificationLog
 import com.example.clasicampsite.model.Reservation
+import com.example.clasicampsite.model.Review
 import com.example.clasicampsite.model.User
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -36,6 +38,44 @@ class DatabaseController {
         val document = users.document(deviceId).get().await()
         return document.toObject(User::class.java) ?: User(id = deviceId)
     }
+
+    suspend fun sendMessageToReserver(
+        ownerId: String,
+        campsiteId: String,
+        recipientId: String,
+        message: String
+    ) {
+        require(message.isNotBlank()) { "Message can't be empty" }
+
+        val campsite = getCampsite(campsiteId)
+        check(campsite != null && campsite.ownerId == ownerId) {
+            "Only the campsite owner can send messages"
+        }
+
+        // Assumes Reservation stores the reserving user's device ID as "userId"
+        val hasReservation = !reservations
+            .whereEqualTo("campsiteId", campsiteId)
+            .whereEqualTo("userId", recipientId)
+            .get().await().isEmpty
+        check(hasReservation) { "That user has no reservation for this campsite" }
+
+        notifications.add(
+            hashMapOf(
+                "userId" to recipientId,
+                "message" to message.trim(),
+                "sentAt" to System.currentTimeMillis(),
+                "senderId" to ownerId,
+                "campsiteId" to campsiteId,
+                "campsiteName" to campsite.name,
+                "type" to "owner_message"
+            )
+        ).await()
+    }
+    suspend fun getNotifications(userId: String): List<Map<String, Any?>> =
+        notifications.whereEqualTo("userId", userId).get().await()
+            .documents.mapNotNull { it.data }
+            .sortedByDescending { (it["sentAt"] as? Long) ?: 0L
+            }
 
     /** Returns every saved user */
     suspend fun getAllUsers(): List<User> {
@@ -89,7 +129,7 @@ class DatabaseController {
 
         campsite.id = document.id
 
-        val campsiteData = hashMapOf(
+        val campsiteData = hashMapOf<String, Any?>(
             "id" to campsite.id,
             "ownerId" to campsite.ownerId,
             "name" to campsite.name,
@@ -101,10 +141,12 @@ class DatabaseController {
             "rating" to campsite.rating,
             "numberOfWinners" to campsite.numberOfWinners,
             "availableFrom" to campsite.availableFrom.toString(),
-            "availableTo" to campsite.availableTo.toString()
+            "availableTo" to campsite.availableTo.toString(),
+            "lotteryDeadline" to campsite.lotteryDeadline?.toString()
         )
 
-        document.set(campsiteData).await()
+
+        document.set(campsiteData, SetOptions.merge()).await()
     }
 
     /** Deletes the campsite with [campsiteId] from Firestore */
@@ -128,6 +170,9 @@ class DatabaseController {
             .getOrDefault(DEFAULT_DATE),
         availableTo = runCatching { LocalDate.parse(getString("availableTo")) }
             .getOrDefault(DEFAULT_DATE),
+        lotteryDeadline = getString("lotteryDeadline")?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+        lotteryResolved = getBoolean("lotteryResolved") ?: false,
+        winners = (get("winners") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
     )
 
     /** Fetches the lottery with [lotteryId], or null if it doesn't exist */
@@ -175,6 +220,7 @@ class DatabaseController {
             "userId" to deviceId,
             "message" to message,
             "sentAt" to System.currentTimeMillis(),
+            "type" to "system"
         )
         notifications.add(notification).await()
     }
@@ -197,6 +243,55 @@ class DatabaseController {
 
         entrant.id = docRef.id
         docRef.set(entrant).await()
+    }
+    private suspend fun isParticipant(campsiteId: String, userId: String): Boolean {
+        if (isUserInLottery(campsiteId, userId)) return true
+        return !reservations
+            .whereEqualTo("campsiteId", campsiteId)
+            .whereEqualTo("userId", userId)
+            .get().await().isEmpty
+    }
+    suspend fun postReview(campsiteId: String, userId: String, userName: String, text: String) {
+        require(text.isNotBlank()) { "Review can't be empty" }
+        require(text.length <= 1000) { "Review is too long" }
+        check(isParticipant(campsiteId, userId)) {
+            "Only guests who entered or reserved this campsite can review it"
+        }
+        campsites.document(campsiteId).collection("reviews").document(userId)
+            .set(
+                mapOf(
+                    "userId" to userId,
+                    "userName" to userName,
+                    "text" to text.trim(),
+                    "postedAt" to System.currentTimeMillis()
+                )
+            ).await()
+    }
+    suspend fun getReviews(campsiteId: String): List<Review> =
+        campsites.document(campsiteId).collection("reviews").get().await()
+            .documents.mapNotNull { it.toObject(Review::class.java) }
+            .sortedByDescending { it.postedAt }
+    suspend fun sendMessageToOwner(senderId: String, campsiteId: String, message: String) {
+        require(message.isNotBlank()) { "Message can't be empty" }
+
+        val campsite = getCampsite(campsiteId)
+        check(campsite != null && campsite.ownerId.isNotBlank()) { "This campsite has no owner" }
+        check(campsite.ownerId != senderId) { "You can't message yourself" }
+        check(isParticipant(campsiteId, senderId)) {
+            "Only guests who entered or reserved this campsite can message the owner"
+        }
+
+        notifications.add(
+            hashMapOf(
+                "userId" to campsite.ownerId,
+                "message" to message.trim(),
+                "sentAt" to System.currentTimeMillis(),
+                "senderId" to senderId,
+                "campsiteId" to campsiteId,
+                "campsiteName" to campsite.name,
+                "type" to "entrant_message"
+            )
+        ).await()
     }
 
     /** Updates the number of winners for a campsite lottery */
@@ -262,6 +357,11 @@ class DatabaseController {
 
     //joins lottery saving user id,stores time and users
     suspend fun joinLottery(campsiteId: String, userId: String) {
+        val camp = getCampsite(campsiteId)
+        val closed = camp != null && (camp.lotteryResolved ||
+                (camp.lotteryDeadline?.let { LocalDate.now().isAfter(it) } ?: false))
+        if (closed) throw IllegalStateException("Registration is closed")
+
         campsites.document(campsiteId)
             .collection("lottery").document(userId)
             .set(mapOf("userId" to userId, "joinedAt" to FieldValue.serverTimestamp()))
@@ -274,5 +374,73 @@ class DatabaseController {
             .collection("lottery").document(userId)
             .delete().await()
     }
+
+    private val db = FirebaseFirestore.getInstance()
+
+    /** Entrant user IDs from the same place joinLottery writes to */
+    suspend fun getLotteryEntrantIds(campsiteId: String): List<String> =
+        campsites.document(campsiteId).collection("lottery").get().await()
+            .documents.map { it.id }
+
+    /** Lets the owner set the last day to join */
+    suspend fun updateLotteryDeadline(campsiteId: String, deadline: LocalDate) {
+        campsites.document(campsiteId).update("lotteryDeadline", deadline.toString()).await()
+    }
+    suspend fun getAllNotificationLogs(): List<NotificationLog> =
+        notifications.get().await().documents.map { doc ->
+            NotificationLog(
+                id = doc.id,
+                recipientId = doc.getString("userId") ?: "",
+                senderId = doc.getString("senderId") ?: "",
+                message = doc.getString("message") ?: "",
+                sentAt = doc.getLong("sentAt") ?: 0L,
+                campsiteId = doc.getString("campsiteId") ?: "",
+                campsiteName = doc.getString("campsiteName") ?: "",
+                type = doc.getString("type") ?: "system"
+            )
+        }.sortedByDescending { it.sentAt }
+
+    /**
+     * Draws winners if the deadline has passed and no draw has happened yet.
+     * Returns true only if THIS call performed the draw.
+     */
+    suspend fun resolveLotteryIfDue(campsiteId: String): Boolean {
+        val campRef = campsites.document(campsiteId)
+        val entrantIds = getLotteryEntrantIds(campsiteId)
+
+        return db.runTransaction { tx ->
+            val camp = tx.get(campRef)
+            val deadline = camp.getString("lotteryDeadline")
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+            val resolved = camp.getBoolean("lotteryResolved") ?: false
+            val name = camp.getString("name") ?: "the campsite"
+
+            // No deadline set, still open, or another phone already drew
+            if (resolved || deadline == null || !LocalDate.now().isAfter(deadline)) {
+                return@runTransaction false
+            }
+
+            val count = (camp.getLong("numberOfWinners") ?: 0L).toInt()
+            val winners = entrantIds.shuffled().take(count)
+
+            tx.update(campRef, mapOf("lotteryResolved" to true, "winners" to winners))
+
+            // One notification per entrant, written atomically with the draw
+            entrantIds.forEach { id ->
+                val msg = if (id in winners) "You won the lottery for $name!"
+                else "You weren't selected in the lottery for $name."
+                tx.set(notifications.document(), hashMapOf(
+                    "userId" to id,
+                    "message" to msg,
+                    "sentAt" to System.currentTimeMillis(),
+                    "campsiteId" to campRef.id,
+                    "campsiteName" to name,
+                    "type" to "lottery_result"
+                ))
+            }
+            true
+        }.await()
+    }
+
 
 }

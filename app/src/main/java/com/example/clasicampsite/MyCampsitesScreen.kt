@@ -63,18 +63,26 @@ fun MyCampsitesScreen(navController: NavController) {
             )
             else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(viewModel.campsites, key = { it.id }) { campsite ->
-                    OwnerCampsiteRow(campsite) {
-                        navController.navigate("campsite_form/${campsite.id}")
+                    OwnerCampsiteRow(
+                        campsite = campsite,
+                        onReservations = { navController.navigate("owner_reservations/${campsite.id}") },
+                        onClick = { navController.navigate("campsite_form/${campsite.id}") }
+                    )
+                }
                     }
                 }
             }
         }
-    }
-}
 
-/** One card in the list. Tapping it runs [onClick]. */
+
+
+/** One card in the list. Tapping it runs [onClick]; the button runs [onReservations]. */
 @Composable
-private fun OwnerCampsiteRow(campsite: Campsite, onClick: () -> Unit) {
+private fun OwnerCampsiteRow(
+    campsite: Campsite,
+    onReservations: () -> Unit,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).testTag("myCampsiteItem"),
     ) {
@@ -85,6 +93,10 @@ private fun OwnerCampsiteRow(campsite: Campsite, onClick: () -> Unit) {
                 "Up to ${campsite.maxOccupancy} guests · $${campsite.pricePerNight}/night",
                 style = MaterialTheme.typography.bodySmall,
             )
+            Button(
+                onClick = onReservations,
+                modifier = Modifier.testTag("viewReservationsButton")
+            ) { Text("Reservations") }
         }
     }
 }

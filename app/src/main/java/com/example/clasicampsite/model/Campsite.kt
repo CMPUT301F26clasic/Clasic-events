@@ -35,8 +35,12 @@ data class Campsite(
     var ownerId: String = "",
     var description: String = "",
     var pricePerNight: Double = 0.0,
-    var tags: List<String> = emptyList()
+    var tags: List<String> = emptyList(),
+    var lotteryDeadline: LocalDate? = null,   // last day people can join
+    var lotteryResolved: Boolean = false,
+    var winners: List<String> = emptyList()   // user IDs
 )
+
 
 data class CampsiteFilter(
     val location: String = "",
@@ -52,3 +56,4 @@ data class CampsiteFilter(
             endDate != null
         ).count { it }
 }
+

@@ -85,6 +85,14 @@ fun HomeScreen(navController: NavController) {
         ) {
             Text("Admin: All campsites")
         }
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = { navController.navigate("admin_notifications") },
+            modifier = Modifier.testTag("adminNotificationsButton")
+        ) {
+            Text("Admin: Notification logs")
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
