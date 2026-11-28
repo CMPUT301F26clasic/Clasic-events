@@ -49,8 +49,12 @@ class DatabaseController {
         users.document(user.id).set(user).await()
     }
 
-    /** Deletes the user saved under [deviceId] */
+    /** Deletes the user saved under [deviceId] and removes them from any campsite waitlists */
     suspend fun deleteUser(deviceId: String) {
+        val allSites = campsites.get().await()
+        for (site in allSites.documents) {
+            site.reference.collection("lottery").document(deviceId).delete().await()
+        }
         users.document(deviceId).delete().await()
     }
 
@@ -286,9 +290,7 @@ class DatabaseController {
     }
 
     /** Sends [message] to the user with [deviceId] as an in-app notification (US 01.05.01) */
-    /** Sends [message] to the user with [deviceId] as an in-app notification if enabled (US 01.05.01, US 01.10.01) */
     suspend fun sendNotification(deviceId: String, message: String) {
-        if (!getUser(deviceId).notificationsEnabled) return
         val notification = hashMapOf(
             "userId" to deviceId,
             "message" to message,
@@ -296,6 +298,7 @@ class DatabaseController {
         )
         notifications.add(notification).await()
     }
+
     /**
      * One in-app notification shown to a user.
      *

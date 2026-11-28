@@ -7,6 +7,8 @@
  */
 package com.example.clasicampsite.model
 
+import com.google.firebase.firestore.IgnoreExtraProperties
+
 /** The shape of a valid email: text@text.text, with one @ and no spaces. */
 /** made by claude */
 private val EMAIL_FORMAT = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
@@ -20,6 +22,8 @@ private val EMAIL_FORMAT = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
  * @property profileImage Profile picture, shrunk and stored as Base64 text, or "" for none
  * @property admin True if this user is an admin. Only set by hand in Firebase (US 03.11.01)
  * @property colorMode Color blind mode: "regular", "protanopia", "deuteranopia" or "tritanopia" */
+
+@IgnoreExtraProperties
 data class User(
     var id: String = "",
     var name: String = "",
