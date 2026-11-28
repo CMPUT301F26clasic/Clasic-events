@@ -92,11 +92,9 @@ fun LotteryManagementScreen(
                 winnerCount = loaded.numberOfWinners.toString()
                 drawnLottery = dbController.getLottery(campsiteId)
 
-                val entrants = dbController.getLotteryEntrants(campsiteId)
-
-                entrantNames = entrants.map { entrant ->
-                    val user = dbController.getUser(entrant.userId)
-                    user.name.ifBlank { "Unnamed user" }
+                val entrantIds = dbController.getLotteryEntrantIds(campsiteId)
+                entrantNames = entrantIds.map { id ->
+                    dbController.getUser(id).name.ifBlank { "Unnamed user" }
                 }
             }
         } catch (e: Exception) {

@@ -59,5 +59,12 @@ fun clasiCampsiteApp() {
         }
         composable("shared_lottery") { SharedLotteryScreen(navController) }
         composable("admin_reviews") { AdminReviewsScreen(navController) }
+        composable("owner_reservations/{campsiteId}") { backStackEntry ->
+            OwnerReservationsScreen(
+                navController = navController,
+                campsiteId = backStackEntry.arguments?.getString("campsiteId") ?: ""
+            )
+        }
+        composable("admin_notifications") { AdminNotificationLogsScreen(navController) }
     }
 }

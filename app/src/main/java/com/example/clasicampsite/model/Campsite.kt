@@ -24,6 +24,9 @@ import java.time.LocalDate
  * @property image Optional promo picture, shrunk and stored as Base64 text, or "" for none
  * @property latitude Map location latitude, or null if the owner hasn't set one
  * @property longitude Map location longitude, or null if the owner hasn't set one
+ * @property lotteryDeadline Last day people can join the lottery, or null if there is none
+ * @property lotteryResolved True once winners have been drawn automatically (US 02.05.01)
+ * @property winners Device IDs of the entrants who won the automatic draw
  */
 data class Campsite(
     var id: String = "",
@@ -41,7 +44,10 @@ data class Campsite(
     var tags: List<String> = emptyList(),
     var image: String = "",
     var latitude: Double? = null,
-    var longitude: Double? = null
+    var longitude: Double? = null,
+    var lotteryDeadline: LocalDate? = null,
+    var lotteryResolved: Boolean = false,
+    var winners: List<String> = emptyList()
 )
 
 /**
@@ -66,3 +72,4 @@ data class CampsiteFilter(
             endDate != null
         ).count { it }
 }
+

@@ -87,6 +87,7 @@ fun MyCampsitesScreen(navController: NavController) {
                         onClick = { navController.navigate("campsite_form/${campsite.id}") },
                         onViewSchedule = { navController.navigate("owner_schedule/${campsite.id}") },
                         onManageLottery = { navController.navigate("manage_lottery/${campsite.id}") },
+                        onReservations = { navController.navigate("owner_reservations/${campsite.id}") },
                     )
                 }
             }
@@ -101,6 +102,7 @@ fun MyCampsitesScreen(navController: NavController) {
  * @param onClick opens the campsite to view or edit it
  * @param onViewSchedule opens its bookings and reservations
  * @param onManageLottery opens its lottery, to set the winners and draw them (US 02.05.01)
+ * @param onReservations opens its guests, to message one of them (US 02.12.01)
  */
 @Composable
 private fun OwnerCampsiteRow(
@@ -108,6 +110,7 @@ private fun OwnerCampsiteRow(
     onClick: () -> Unit,
     onViewSchedule: () -> Unit,
     onManageLottery: () -> Unit,
+    onReservations: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).testTag("myCampsiteItem"),
@@ -131,6 +134,12 @@ private fun OwnerCampsiteRow(
                 modifier = Modifier.testTag("manageLotteryButton_${campsite.id}"),
             ) {
                 Text("Manage Lottery")
+            }
+            Button(
+                onClick = onReservations,
+                modifier = Modifier.testTag("viewReservationsButton"),
+            ) {
+                Text("Message Guests")
             }
         }
     }

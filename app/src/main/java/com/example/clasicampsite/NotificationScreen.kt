@@ -1,6 +1,7 @@
 /**
  * Purpose: Displays in-app notifications for the user, including campsite lottery
- * win and loss updates (#5).
+ * win and loss updates (#5) and messages between owners and campers (US 02.12.01, US 01.14.01),
+ * labelled with the campsite they are about.
  * Outstanding issues: None.
  */
 package com.example.clasicampsite
@@ -14,7 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
 
@@ -46,7 +46,7 @@ fun NotificationScreen(
     deviceId: String = "",
     dbController: DatabaseController = remember { DatabaseController() },
 ) {
-    var notifications by remember { mutableStateOf<List<String>>(emptyList()) }
+    var notifications by remember { mutableStateOf<List<Map<String, Any?>>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
     /**
@@ -63,8 +63,7 @@ fun NotificationScreen(
     LaunchedEffect(userId) {
         try {
             isLoading = true
-            val items = dbController.getNotificationsForUser(userId)
-            notifications = items.map { it.message }
+            notifications = dbController.getNotifications(userId)
         } catch (_: Exception) {
             notifications = emptyList()
         } finally {
@@ -100,16 +99,41 @@ fun NotificationScreen(
                 modifier = Modifier.fillMaxWidth().weight(1f).testTag("notificationsList"),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(notifications) { msg ->
+                items(notifications) { notification ->
                     Card(modifier = Modifier.fillMaxWidth().testTag("notificationItem")) {
-                        Text(
-                            text = msg,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(12.dp),
-                        )
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            val label = notificationLabel(notification)
+                            if (label.isNotBlank()) {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            Text(
+                                text = notification["message"] as? String ?: "",
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
                     }
                 }
             }
         }
     }
+}
+
+/**
+ * Builds the small line shown above a notification: who it's from and which campsite.
+ *
+ * @param notification the notification's Firestore fields
+ * @return text like "Message from the owner · Pine Ridge", or "" if there is nothing to show
+ */
+private fun notificationLabel(notification: Map<String, Any?>): String {
+    val from = when (notification["type"]) {
+        "owner_message" -> "Message from the owner"
+        "entrant_message" -> "Message from a camper"
+        else -> ""
+    }
+    val campsite = notification["campsiteName"] as? String ?: ""
+    return listOf(from, campsite).filter { it.isNotBlank() }.joinToString(" · ")
 }

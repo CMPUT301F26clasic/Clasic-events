@@ -10,8 +10,10 @@ import com.example.clasicampsite.model.Campsite
 import com.example.clasicampsite.model.CampsiteReview
 import com.example.clasicampsite.model.Lottery
 import com.example.clasicampsite.model.LotteryEntrant
+import com.example.clasicampsite.model.NotificationLog
 import com.example.clasicampsite.model.Reservation
 import com.example.clasicampsite.model.SentNotification
+import com.example.clasicampsite.model.Review
 import com.example.clasicampsite.model.User
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -21,7 +23,7 @@ import java.time.LocalDate
 import com.google.firebase.firestore.SetOptions
 import com.example.clasicampsite.AdminAccess.deviceId
 
-private val DEFAULT_DATE = LocalDate.of(1970, 1, 1)
+private val DEFAULT_DATE = LocalDate.of(1970,  1, 1)
 
 /** Reads and writes app data in Firestore. */
 class DatabaseController {
@@ -37,6 +39,62 @@ class DatabaseController {
         val document = users.document(deviceId).get().await()
         return document.toObject(User::class.java) ?: User(id = deviceId)
     }
+
+    /**
+     * Sends a message from a campsite owner to a guest with a reservation there (US 02.12.01).
+     * It is saved as a notification, so it shows in the guest's notifications and the admin logs.
+     *
+     * @param ownerId the owner's device ID
+     * @param campsiteId the campsite the guest reserved
+     * @param recipientId the guest's device ID
+     * @param message the text to send
+     * @throws IllegalArgumentException if the message is blank
+     * @throws IllegalStateException if the sender isn't the owner or the guest has no reservation
+     */
+    suspend fun sendMessageToReserver(
+        ownerId: String,
+        campsiteId: String,
+        recipientId: String,
+        message: String
+    ) {
+        require(message.isNotBlank()) { "Message can't be empty" }
+
+        val campsite = getCampsite(campsiteId)
+        check(campsite != null && campsite.ownerId == ownerId) {
+            "Only the campsite owner can send messages"
+        }
+
+        /** reservations store the guest's device ID as "userId" */
+        val hasReservation = !reservations
+            .whereEqualTo("campsiteId", campsiteId)
+            .whereEqualTo("userId", recipientId)
+            .get().await().isEmpty
+        check(hasReservation) { "That user has no reservation for this campsite" }
+
+        notifications.add(
+            hashMapOf(
+                "userId" to recipientId,
+                "message" to message.trim(),
+                "sentAt" to System.currentTimeMillis(),
+                "senderId" to ownerId,
+                "campsiteId" to campsiteId,
+                "campsiteName" to campsite.name,
+                "type" to "owner_message"
+            )
+        ).await()
+    }
+
+    /**
+     * Fetches every notification sent to [userId], newest first, with all their fields
+     * (message, campsiteName, senderId, type...).
+     *
+     * @param userId the user's device ID
+     * @return the notifications as maps of their Firestore fields
+     */
+    suspend fun getNotifications(userId: String): List<Map<String, Any?>> =
+        notifications.whereEqualTo("userId", userId).get().await()
+            .documents.mapNotNull { it.data }
+            .sortedByDescending { (it["sentAt"] as? Long) ?: 0L }
 
     /** Returns every saved user */
     suspend fun getAllUsers(): List<User> {
@@ -103,7 +161,7 @@ class DatabaseController {
 
         campsite.id = document.id
 
-        val campsiteData = hashMapOf(
+        val campsiteData = hashMapOf<String, Any?>(
             "id" to campsite.id,
             "ownerId" to campsite.ownerId,
             "name" to campsite.name,
@@ -118,10 +176,12 @@ class DatabaseController {
             "rating" to campsite.rating,
             "numberOfWinners" to campsite.numberOfWinners,
             "availableFrom" to campsite.availableFrom.toString(),
-            "availableTo" to campsite.availableTo.toString()
+            "availableTo" to campsite.availableTo.toString(),
+            "lotteryDeadline" to campsite.lotteryDeadline?.toString()
         )
 
-        document.set(campsiteData).await()
+
+        document.set(campsiteData, SetOptions.merge()).await()
     }
 
     /** Deletes the campsite with [campsiteId] from Firestore */
@@ -148,6 +208,9 @@ class DatabaseController {
             .getOrDefault(DEFAULT_DATE),
         availableTo = runCatching { LocalDate.parse(getString("availableTo")) }
             .getOrDefault(DEFAULT_DATE),
+        lotteryDeadline = getString("lotteryDeadline")?.let { runCatching { LocalDate.parse(it) }.getOrNull() },
+        lotteryResolved = getBoolean("lotteryResolved") ?: false,
+        winners = (get("winners") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
     )
 
     /** Fetches the lottery with [lotteryId], or null if it doesn't exist */
@@ -251,6 +314,7 @@ class DatabaseController {
             "userId" to deviceId,
             "message" to message,
             "sentAt" to System.currentTimeMillis(),
+            "type" to "system"
         )
         notifications.add(notification).await()
     }
@@ -373,6 +437,94 @@ class DatabaseController {
         entrant.id = docRef.id
     }
 
+    /**
+     * Checks if a user joined a campsite's lottery or has a reservation there.
+     *
+     * @param campsiteId the campsite's Firestore ID
+     * @param userId the user's device ID
+     * @return true if they entered or reserved it
+     */
+    private suspend fun isParticipant(campsiteId: String, userId: String): Boolean {
+        if (isUserInLottery(campsiteId, userId)) return true
+        return !reservations
+            .whereEqualTo("campsiteId", campsiteId)
+            .whereEqualTo("userId", userId)
+            .get().await().isEmpty
+    }
+
+    /**
+     * Saves a written review of a campsite (US 01.13.02). Each user has one review per campsite,
+     * so posting again replaces it. Only people who entered or reserved the campsite can review it.
+     *
+     * @param campsiteId the campsite's Firestore ID
+     * @param userId the reviewer's device ID
+     * @param userName the name shown with the review
+     * @param text the review, up to 1000 characters
+     * @throws IllegalArgumentException if the text is blank or too long
+     * @throws IllegalStateException if the user never entered or reserved the campsite
+     */
+    suspend fun postReview(campsiteId: String, userId: String, userName: String, text: String) {
+        require(text.isNotBlank()) { "Review can't be empty" }
+        require(text.length <= 1000) { "Review is too long" }
+        check(isParticipant(campsiteId, userId)) {
+            "Only guests who entered or reserved this campsite can review it"
+        }
+        campsites.document(campsiteId).collection("reviews").document(userId)
+            .set(
+                mapOf(
+                    "userId" to userId,
+                    "userName" to userName,
+                    "text" to text.trim(),
+                    "postedAt" to System.currentTimeMillis()
+                )
+            ).await()
+    }
+
+    /**
+     * Fetches the written reviews of a campsite, newest first (US 01.13.02).
+     *
+     * @param campsiteId the campsite's Firestore ID
+     * @return the reviews
+     */
+    suspend fun getReviews(campsiteId: String): List<Review> =
+        campsites.document(campsiteId).collection("reviews").get().await()
+            .documents.mapNotNull { it.toObject(Review::class.java) }
+            .sortedByDescending { it.postedAt }
+
+    /**
+     * Sends a message from an entrant or guest to the campsite owner (US 01.14.01). It is saved as a
+     * notification for the owner.
+     *
+     * @param senderId the sender's device ID
+     * @param campsiteId the campsite the message is about
+     * @param message the text to send
+     * @throws IllegalArgumentException if the message is blank
+     * @throws IllegalStateException if the campsite has no owner, the sender is the owner, or
+     * the sender never entered or reserved the campsite
+     */
+    suspend fun sendMessageToOwner(senderId: String, campsiteId: String, message: String) {
+        require(message.isNotBlank()) { "Message can't be empty" }
+
+        val campsite = getCampsite(campsiteId)
+        check(campsite != null && campsite.ownerId.isNotBlank()) { "This campsite has no owner" }
+        check(campsite.ownerId != senderId) { "You can't message yourself" }
+        check(isParticipant(campsiteId, senderId)) {
+            "Only guests who entered or reserved this campsite can message the owner"
+        }
+
+        notifications.add(
+            hashMapOf(
+                "userId" to campsite.ownerId,
+                "message" to message.trim(),
+                "sentAt" to System.currentTimeMillis(),
+                "senderId" to senderId,
+                "campsiteId" to campsiteId,
+                "campsiteName" to campsite.name,
+                "type" to "entrant_message"
+            )
+        ).await()
+    }
+
     /** Updates the number of winners for a campsite lottery */
     suspend fun updateNumberOfWinners(campsiteId: String, numberOfWinners: Int) {
         campsites.document(campsiteId).update("numberOfWinners", numberOfWinners).await()
@@ -414,13 +566,16 @@ class DatabaseController {
         val campsiteRef = campsites.document(campsiteId)
         val ratingsRef = campsiteRef.collection("ratings")
 
+        /** saves the user's rating, replacing any old one */
         ratingsRef.document(userId)
             .set(mapOf("userId" to userId, "rating" to rating, "ratedAt" to FieldValue.serverTimestamp()))
             .await()
 
+        /** averages all the ratings, rounded to one decimal place */
         val all = ratingsRef.get().await().documents.mapNotNull { it.getLong("rating") }
         val average = Math.round(all.average() * 10) / 10.0
 
+        /** saves the new average */
         campsiteRef.set(mapOf("rating" to average), SetOptions.merge()).await()
         return average
     }
@@ -503,12 +658,19 @@ class DatabaseController {
             .get().await().exists()
 
     /**
-     * Adds a user to a campsite's lottery (US 01.01.06).
+     * Adds a user to a campsite's lottery (US 01.01.06). Joining is closed once winners have been
+     * drawn or the lottery deadline has passed.
      *
      * @param campsiteId the campsite's Firestore ID
      * @param userId the user's device ID
+     * @throws IllegalStateException if registration is closed
      */
     suspend fun joinLottery(campsiteId: String, userId: String) {
+        val camp = getCampsite(campsiteId)
+        val deadlinePassed = camp?.lotteryDeadline?.let { LocalDate.now().isAfter(it) } ?: false
+        val drawn = camp?.lotteryResolved == true || getLottery(campsiteId)?.hasBeenDrawn() == true
+        if (deadlinePassed || drawn) throw IllegalStateException("Registration is closed")
+
         saveLotteryEntrant(LotteryEntrant(campsiteId = campsiteId, userId = userId))
     }
 
@@ -524,4 +686,105 @@ class DatabaseController {
             .delete().await()
     }
 
+    /**
+     * Fetches the device IDs of everyone in a campsite's lottery.
+     *
+     * @param campsiteId the campsite's Firestore ID
+     * @return the entrants' device IDs
+     */
+    suspend fun getLotteryEntrantIds(campsiteId: String): List<String> =
+        campsites.document(campsiteId).collection("lottery").get().await()
+            .documents.map { it.id }
+
+    /**
+     * Sets the last day people can join a campsite's lottery (US 02.05.01).
+     *
+     * @param campsiteId the campsite's Firestore ID
+     * @param deadline the last day to join
+     */
+    suspend fun updateLotteryDeadline(campsiteId: String, deadline: LocalDate) {
+        campsites.document(campsiteId).update("lotteryDeadline", deadline.toString()).await()
+    }
+
+    /**
+     * Marks a campsite's lottery as drawn, so nobody else can join and it isn't drawn again.
+     *
+     * @param campsiteId the campsite's Firestore ID
+     * @param winners the device IDs that won
+     */
+    suspend fun markLotteryResolved(campsiteId: String, winners: List<String>) {
+        campsites.document(campsiteId)
+            .set(mapOf("lotteryResolved" to true, "winners" to winners), SetOptions.merge()).await()
+    }
+
+    /**
+     * Fetches every notification ever sent, newest first, for the admin logs (US 03.08.01,
+     * US 03.12.01).
+     *
+     * @return one log entry per notification
+     */
+    suspend fun getAllNotificationLogs(): List<NotificationLog> =
+        notifications.get().await().documents.map { doc ->
+            NotificationLog(
+                id = doc.id,
+                recipientId = doc.getString("userId") ?: "",
+                senderId = doc.getString("senderId") ?: "",
+                message = doc.getString("message") ?: "",
+                sentAt = doc.getLong("sentAt") ?: 0L,
+                campsiteId = doc.getString("campsiteId") ?: "",
+                campsiteName = doc.getString("campsiteName") ?: "",
+                type = doc.getString("type") ?: "system"
+            )
+        }.sortedByDescending { it.sentAt }
+
+    /**
+     * Draws winners automatically once the lottery deadline has passed (US 02.05.01). It runs in a
+     * transaction so two phones opening the campsite at once can't both draw. The winners are
+     * also saved as a lottery, so they can pick their dates in Reservations.
+     *
+     * @param campsiteId the campsite's Firestore ID
+     * @return true only if this call did the draw
+     */
+    suspend fun resolveLotteryIfDue(campsiteId: String): Boolean {
+        val campRef = campsites.document(campsiteId)
+        val lotteryRef = lotteries.document(campsiteId)
+        val entrantIds = getLotteryEntrantIds(campsiteId)
+
+        return FirebaseFirestore.getInstance().runTransaction { tx ->
+            val camp = tx.get(campRef)
+            val alreadyDrawn = (tx.get(lotteryRef).get("winners") as? List<*>)?.isNotEmpty() == true
+            val deadline = camp.getString("lotteryDeadline")
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+            val resolved = camp.getBoolean("lotteryResolved") ?: false
+
+            /** no deadline set, still open, or it was already drawn (here, by the owner, or by another phone) */
+            if (!camp.exists() || resolved || alreadyDrawn || deadline == null || !LocalDate.now().isAfter(deadline)) {
+                return@runTransaction false
+            }
+
+            val site = camp.toCampsite()
+            val winners = Lottery.pickWinners(entrantIds, site.numberOfWinners)
+
+            tx.update(campRef, mapOf("lotteryResolved" to true, "winners" to winners))
+            tx.set(lotteryRef, Lottery.forCampsite(site, winners, LocalDate.now()))
+
+            /** one notification per entrant, saved together with the draw */
+            entrantIds.forEach { id ->
+                val msg = if (id in winners) {
+                    "Congrats! You won the lottery for ${site.name}. Open Reservations to pick your dates."
+                } else {
+                    "Sorry, you were not selected in the lottery for ${site.name}."
+                }
+                tx.set(notifications.document(), hashMapOf(
+                    "userId" to id,
+                    "message" to msg,
+                    "sentAt" to System.currentTimeMillis(),
+                    "campsiteId" to campRef.id,
+                    "campsiteName" to site.name,
+                    "type" to "lottery_result"
+                ))
+            }
+            true
+        }.await()
+    }
 }

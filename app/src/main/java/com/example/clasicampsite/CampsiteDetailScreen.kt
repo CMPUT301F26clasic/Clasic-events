@@ -1,13 +1,13 @@
 /**
- * Purpose: Displays details for a single campsite and lets users join/leave its lottery
- * or submit a 1-5 star rating.
- * Outstanding issues: None.
+ * Purpose: Displays details for a single campsite and lets users join/leave its lottery,
+ * submit a 1-5 star rating, write a review (US 01.13.02) and message the owner (US 01.14.01).
+ * Opening a campsite whose lottery deadline has passed draws its winners (US 02.05.01).
+ * Outstanding issues: The automatic draw only happens when someone opens the campsite.
  */
 package com.example.clasicampsite
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,12 +42,21 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.clasicampsite.data.DatabaseController
 import com.example.clasicampsite.model.Campsite
+import com.example.clasicampsite.model.Review
+import androidx.compose.material3.OutlinedTextField
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
-/** Shows details, lottery join/leave controls, and star rating picker for [campsiteId]. */
+/**
+ * Shows details, lottery join/leave controls, a star rating picker, written reviews and a
+ * button to message the owner for [campsiteId].
+ *
+ * @param navController used to go back or open Manage Lottery
+ * @param campsiteId the Firestore ID of the campsite, or "" for a built-in sample
+ * @param dbController where the campsite, lottery, ratings and reviews are loaded from and saved
+ */
 @Composable
 fun CampsiteDetailScreen(
     navController: NavController,
@@ -71,20 +80,42 @@ fun CampsiteDetailScreen(
     var showRating by remember { mutableStateOf<Double?>(null) }
     var rating by remember { mutableStateOf(false) }
     var ratingError by remember { mutableStateOf<String?>(null) }
+    /** written reviews (US 01.13.02) */
+    var reviews by remember { mutableStateOf<List<Review>>(emptyList()) }
+    var reviewText by remember { mutableStateOf("") }
+    var postingReview by remember { mutableStateOf(false) }
+    var reviewError by remember { mutableStateOf<String?>(null) }
+    /** message to the owner (US 01.14.01) */
+    var showMessageDialog by remember { mutableStateOf(false) }
+    var sendingMessage by remember { mutableStateOf(false) }
+    var messageError by remember { mutableStateOf<String?>(null) }
+    var messageSent by remember { mutableStateOf(false) }
+    /** winners of this campsite's lottery once it has been drawn, by the owner or automatically */
+    var drawnWinners by remember { mutableStateOf<List<String>?>(null) }
 
     /** Fetch details from Firestore when campsiteId changes */
     LaunchedEffect(campsiteId) {
         if (campsiteId.isNotBlank()) {
             try {
                 isLoading = true
+                /** draws the winners first if the deadline has passed; a failure here shouldn't hide the campsite */
+                runCatching { dbController.resolveLotteryIfDue(campsiteId) }
                 val fetched = dbController.getCampsite(campsiteId)
                 if (fetched != null) {
                     campsite = fetched
                     showRating = fetched.rating
                     alreadyinLottery =
                         userId != null && dbController.isUserInLottery(campsiteId, userId)
-                    userrating = dbController.getUserRating(campsiteId, userId)}
-                else {
+                    userrating = dbController.getUserRating(campsiteId, userId)
+                    val drawn = dbController.getLottery(campsiteId)
+                    drawnWinners = when {
+                        drawn?.hasBeenDrawn() == true -> drawn.winners
+                        fetched.lotteryResolved -> fetched.winners
+                        else -> null
+                    }
+                    reviews = runCatching { dbController.getReviews(campsiteId) }.getOrDefault(emptyList())
+                    reviewText = reviews.firstOrNull { it.userId == userId }?.text ?: ""
+                } else {
                     errorMessage = "Campsite not found."
                 }
             } catch (e: Exception) {
@@ -174,7 +205,26 @@ fun CampsiteDetailScreen(
                 }
             }
 
-            if (alreadyinLottery) {
+            val winners = drawnWinners
+            val deadlinePassed = site.lotteryDeadline?.let { LocalDate.now().isAfter(it) } ?: false
+            val isOwner = site.ownerId.isNotBlank() && site.ownerId == userId
+
+            if (winners != null || deadlinePassed) {
+                Text(
+                    text = when {
+                        winners != null && userId in winners -> "You won this lottery! Open Reservations to pick your dates."
+                        winners != null && alreadyinLottery -> "You weren't selected this time."
+                        else -> "Registration for this lottery is closed."
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.testTag("lotteryResultText")
+                )
+            } else if (isOwner) {
+                Text(
+                    text = "This is your campsite, so you can't join its lottery.",
+                    modifier = Modifier.testTag("ownCampsiteText")
+                )
+            } else if (alreadyinLottery) {
                 OutlinedButton(
                     onClick = onToggle,
                     enabled = !updateLottery && userId != null,
@@ -333,6 +383,111 @@ fun CampsiteDetailScreen(
 
             ratingError?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+            }
+
+            if (campsiteId.isNotBlank()) {
+                /** Message the owner (US 01.14.01), not shown to the owner themselves */
+                if (site.ownerId.isNotBlank() && !isOwner) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(
+                        onClick = { showMessageDialog = true; messageError = null; messageSent = false },
+                        modifier = Modifier.fillMaxWidth().testTag("messageOwnerButton")
+                    ) {
+                        Text("Message the owner")
+                    }
+                    if (messageSent) {
+                        Text(
+                            "Message sent!",
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.testTag("messageSentText")
+                        )
+                    }
+                }
+
+                /** Written reviews (US 01.13.02) */
+                Spacer(modifier = Modifier.height(24.dp))
+                Text("Reviews", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+
+                OutlinedTextField(
+                    value = reviewText,
+                    onValueChange = { if (it.length <= 1000) reviewText = it },
+                    label = { Text("Write a review") },
+                    supportingText = { Text("${reviewText.length}/1000") },
+                    modifier = Modifier.fillMaxWidth().testTag("reviewField")
+                )
+                Button(
+                    enabled = !postingReview && reviewText.isNotBlank() && userId != null,
+                    onClick = {
+                        scope.launch {
+                            postingReview = true
+                            reviewError = null
+                            try {
+                                val name = dbController.getUser(userId).name.ifBlank { "Anonymous" }
+                                dbController.postReview(site.id, userId, name, reviewText)
+                                reviews = dbController.getReviews(site.id)
+                            } catch (e: Exception) {
+                                reviewError = e.localizedMessage
+                            } finally {
+                                postingReview = false
+                            }
+                        }
+                    },
+                    modifier = Modifier.testTag("postReviewButton")
+                ) {
+                    Text(if (postingReview) "Posting..." else "Post review")
+                }
+
+                reviewError?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (reviews.isEmpty()) {
+                    Text("No reviews yet.", modifier = Modifier.testTag("noReviewsText"))
+                } else {
+                    reviews.forEachIndexed { index, review ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .testTag("review_$index")
+                        ) {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(
+                                    review.userName,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(review.text)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (showMessageDialog) {
+                MessageReserverDialog(
+                    recipientName = "the owner",
+                    isSending = sendingMessage,
+                    error = messageError,
+                    onDismiss = { showMessageDialog = false },
+                    onSend = { text ->
+                        scope.launch {
+                            sendingMessage = true
+                            messageError = null
+                            try {
+                                dbController.sendMessageToOwner(userId, site.id, text)
+                                showMessageDialog = false
+                                messageSent = true
+                            } catch (e: Exception) {
+                                messageError = e.localizedMessage
+                            } finally {
+                                sendingMessage = false
+                            }
+                        }
+                    }
+                )
             }
         }
     }
